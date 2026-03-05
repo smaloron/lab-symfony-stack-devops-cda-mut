@@ -1,0 +1,430 @@
+<!DOCTYPE html SYSTEM "about:legacy-compat">
+<html lang="en-US" data-preset="contrast" data-primary-color="#307FFF"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="UTF-8"><meta name="robots" content="noindex"><meta name="built-on" content="2026-03-05T13:50:53.681987"><title>Lab 7 &mdash; Orchestration avec Docker Swarm | Lab Symfony devops</title><script type="application/json" id="virtual-toc-data">[{"id":"objectifs-du-lab","level":0,"title":"Objectifs du lab","anchor":"#objectifs-du-lab"},{"id":"7-1-comprendre-docker-swarm","level":0,"title":"7.1 — Comprendre Docker Swarm","anchor":"#7-1-comprendre-docker-swarm"},{"id":"7-2-cr-ation-des-vms-avec-multipass","level":0,"title":"7.2 — Création des VMs avec Multipass","anchor":"#7-2-cr-ation-des-vms-avec-multipass"},{"id":"7-3-installation-de-docker-sur-les-vms","level":0,"title":"7.3 — Installation de Docker sur les VMs","anchor":"#7-3-installation-de-docker-sur-les-vms"},{"id":"7-4-initialisation-du-cluster-swarm","level":0,"title":"7.4 — Initialisation du cluster Swarm","anchor":"#7-4-initialisation-du-cluster-swarm"},{"id":"7-5-pr-paration-des-images-docker","level":0,"title":"7.5 — Préparation des images Docker","anchor":"#7-5-pr-paration-des-images-docker"},{"id":"7-6-adaptation-du-docker-compose-yml-en-stack-swarm","level":0,"title":"7.6 — Adaptation du docker-compose.yml en Stack Swarm","anchor":"#7-6-adaptation-du-docker-compose-yml-en-stack-swarm"},{"id":"7-7-d-ploiement-de-la-stack","level":0,"title":"7.7 — Déploiement de la Stack","anchor":"#7-7-d-ploiement-de-la-stack"},{"id":"7-8-scaling-des-services","level":0,"title":"7.8 — Scaling des services","anchor":"#7-8-scaling-des-services"},{"id":"7-9-rolling-update-mise-jour-sans-interruption","level":0,"title":"7.9 — Rolling Update (mise à jour sans interruption)","anchor":"#7-9-rolling-update-mise-jour-sans-interruption"},{"id":"7-10-rollback","level":0,"title":"7.10 — Rollback","anchor":"#7-10-rollback"},{"id":"7-11-tests-de-haute-disponibilit","level":0,"title":"7.11 — Tests de haute disponibilité","anchor":"#7-11-tests-de-haute-disponibilit"},{"id":"7-12-monitoring-et-logs","level":0,"title":"7.12 — Monitoring et logs","anchor":"#7-12-monitoring-et-logs"},{"id":"7-13-nettoyage","level":0,"title":"7.13 — Nettoyage","anchor":"#7-13-nettoyage"},{"id":"r-capitulatif","level":0,"title":"Récapitulatif","anchor":"#r-capitulatif"}]</script><script type="application/json" id="topic-shortcuts"></script><link href="https://resources.jetbrains.com/writerside/apidoc/6.25.3-b857/app.css" rel="stylesheet"><meta name="msapplication-TileColor" content="#000000"><link rel="apple-touch-icon" sizes="180x180" href="https://jetbrains.com/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="https://jetbrains.com/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="https://jetbrains.com/favicon-16x16.png"><meta name="msapplication-TileImage" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-144x144.png"><meta name="msapplication-square70x70logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-70x70.png"><meta name="msapplication-square150x150logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-150x150.png"><meta name="msapplication-wide310x150logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-310x150.png"><meta name="msapplication-square310x310logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-310x310.png"><meta name="image" content=""><!-- Open Graph --><meta property="og:title" content="Lab 7 &mdash; Orchestration avec Docker Swarm | Lab Symfony devops"><meta property="og:description" content=""><meta property="og:image" content=""><meta property="og:site_name" content="Lab Symfony devops Help"><meta property="og:type" content="website"><meta property="og:locale" content="en_US"><meta property="og:url" content="writerside-documentation/lab-07.html"><!-- End Open Graph --><!-- Twitter Card --><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content=""><meta name="twitter:title" content="Lab 7 &mdash; Orchestration avec Docker Swarm | Lab Symfony devops"><meta name="twitter:description" content=""><meta name="twitter:creator" content=""><meta name="twitter:image:src" content=""><!-- End Twitter Card --><!-- Schema.org WebPage --><script type="application/ld+json">{
+    "@context": "http://schema.org",
+    "@type": "WebPage",
+    "@id": "writerside-documentation/lab-07.html#webpage",
+    "url": "writerside-documentation/lab-07.html",
+    "name": "Lab 7 &mdash; Orchestration avec Docker Swarm | Lab Symfony devops",
+    "description": "",
+    "image": "",
+    "inLanguage":"en-US"
+}</script><!-- End Schema.org --><!-- Schema.org WebSite --><script type="application/ld+json">{
+    "@type": "WebSite",
+    "@id": "writerside-documentation/#website",
+    "url": "writerside-documentation/",
+    "name": "Lab Symfony devops Help"
+}</script><!-- End Schema.org --></head><body data-id="lab-07" data-main-title="Lab 7 — Orchestration avec Docker Swarm" data-article-props="{&quot;seeAlsoStyle&quot;:&quot;links&quot;}" data-template="article" data-breadcrumbs="lab-7-intro.md|7. Orchestration avec Docker Swarm"><div class="wrapper"><main class="panel _main"><header class="panel__header"><div class="container"><h3>Lab Symfony devops  Help</h3><div class="panel-trigger"></div></div></header><section class="panel__content"><div class="container"><article class="article" data-shortcut-switcher="inactive"><h1 data-toc="lab-07" id="lab-07.md">Lab 7 — Orchestration avec Docker Swarm</h1><section class="chapter"><h2 id="objectifs-du-lab" data-toc="objectifs-du-lab">Objectifs du lab</h2><p id="baf4ee_18">&Agrave; l'issue de ce lab, vous serez capable de :</p><ul class="list _bullet" id="baf4ee_19"><li class="list__item" id="baf4ee_22"><p id="baf4ee_26">Cr&eacute;er un cluster Docker Swarm multi-n&oelig;uds avec Multipass</p></li><li class="list__item" id="baf4ee_23"><p id="baf4ee_27">Adapter un fichier <code class="code" id="baf4ee_28">docker-compose.yml</code> en stack Swarm</p></li><li class="list__item" id="baf4ee_24"><p id="baf4ee_29">D&eacute;ployer, scaler et mettre &agrave; jour une application en production</p></li><li class="list__item" id="baf4ee_25"><p id="baf4ee_30">Tester la haute disponibilit&eacute; et le self-healing</p></li></ul><aside class="prompt" data-type="tip" data-title="" id="baf4ee_20"><p id="baf4ee_31"><span class="control" id="baf4ee_32">Pr&eacute;requis</span>: Docker, Docker Compose, notions de r&eacute;seau, lab pr&eacute;c&eacute;dent (Yapuka) termin&eacute;</p></aside></section><section class="chapter"><h2 id="7-1-comprendre-docker-swarm" data-toc="7-1-comprendre-docker-swarm">7.1 &mdash; Comprendre Docker Swarm</h2><p id="baf4ee_33">Avant de mettre les mains dans le terminal, prenons 10 minutes pour comprendre ce que nous allons construire.</p><section class="chapter"><h3 id="concepts-cl-s" data-toc="concepts-cl-s">Concepts cl&eacute;s</h3><p id="baf4ee_38">Docker Swarm est le moteur d'orchestration natif de Docker. Il transforme un ensemble de machines (physiques ou virtuelles) en un <span class="control" id="baf4ee_42">cluster unifi&eacute;</span> capable de :</p><ul class="list _bullet" id="baf4ee_39"><li class="list__item" id="baf4ee_43"><p id="baf4ee_47"><span class="control" id="baf4ee_48">Distribuer</span> les conteneurs sur plusieurs machines</p></li><li class="list__item" id="baf4ee_44"><p id="baf4ee_49"><span class="control" id="baf4ee_50">&Eacute;quilibrer</span> la charge automatiquement (routing mesh)</p></li><li class="list__item" id="baf4ee_45"><p id="baf4ee_51"><span class="control" id="baf4ee_52">R&eacute;parer</span> les pannes sans intervention (self-healing)</p></li><li class="list__item" id="baf4ee_46"><p id="baf4ee_53"><span class="control" id="baf4ee_54">Mettre &agrave; jour</span> les services sans interruption (rolling update)</p></li></ul><p id="baf4ee_40">Un cluster Swarm est compos&eacute; de deux types de n&oelig;uds :</p><ul class="list _bullet" id="baf4ee_41"><li class="list__item" id="baf4ee_55"><p id="baf4ee_57"><span class="control" id="baf4ee_58">Manager</span>: orchestre le cluster, prend les d&eacute;cisions de placement, expose l'API Swarm. C'est ici qu'on ex&eacute;cute les commandes <code class="code" id="baf4ee_59">docker service</code>, <code class="code" id="baf4ee_60">docker stack</code>, etc.</p></li><li class="list__item" id="baf4ee_56"><p id="baf4ee_61"><span class="control" id="baf4ee_62">Worker</span>: ex&eacute;cute les conteneurs (appel&eacute;s <span class="emphasis" id="baf4ee_63">tasks</span>). Ne prend aucune d&eacute;cision, ob&eacute;it au manager.</p></li></ul></section><section class="chapter"><h3 id="architecture-cible" data-toc="architecture-cible">Architecture cible</h3><div class="code-block" data-lang="none">
+┌─────────────────────────────────────────────────┐
+│                  Votre machine                  │
+│                                                 │
+│  ┌─────────────┐ ┌────────────┐ ┌────────────┐  │
+│  │   manager   │ │  worker-1  │ │  worker-2  │  │
+│  │ (VM - 2CPU) │ │ (VM - 2CPU)│ │ (VM - 2CPU)│  │
+│  │ 4GB / 20GB  │ │ 4GB / 20GB │ │ 4GB / 20GB │  │
+│  │             │ │            │ │            │  │
+│  │ nginx ×1    │ │ php ×1     │ │ php ×1     │  │
+│  │ front ×1    │ │ front ×1   │ │            │  │
+│  │ postgres ×1 │ │            │ │            │  │
+│  │ redis ×1    │ │            │ │            │  │
+│  └─────────────┘ └────────────┘ └────────────┘  │
+└─────────────────────────────────────────────────┘
+</div></section><section class="chapter"><h3 id="exercice-de-r-flexion" data-toc="exercice-de-r-flexion">Exercice de r&eacute;flexion</h3><p id="baf4ee_65">Avant de continuer, r&eacute;pondez &agrave; ces questions dans un fichier <code class="code" id="baf4ee_67">notes-swarm.md</code>:</p><ol class="list _decimal" id="baf4ee_66" type="1"><li class="list__item" id="baf4ee_68"><p id="baf4ee_71">Pourquoi le manager ne devrait-il pas ex&eacute;cuter les conteneurs applicatifs en production ?</p></li><li class="list__item" id="baf4ee_69"><p id="baf4ee_72">Pourquoi recommande-t-on un nombre <span class="control" id="baf4ee_73">impair</span> de managers (1, 3, 5) ?</p></li><li class="list__item" id="baf4ee_70"><p id="baf4ee_74">Quelle est la diff&eacute;rence entre un r&eacute;seau <code class="code" id="baf4ee_75">bridge</code> (Docker Compose) et un r&eacute;seau <code class="code" id="baf4ee_76">overlay</code> (Swarm) ?</p></li></ol></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_1" data-toc="correction_1">Correction</h3></div><div class="collapse__content"><ol class="list _decimal" id="baf4ee_77" type="1"><li class="list__item" id="baf4ee_79"><p id="baf4ee_82">Le manager g&egrave;re l'&eacute;tat du cluster (base Raft). S'il est surcharg&eacute; par des conteneurs applicatifs, il peut devenir lent &agrave; prendre des d&eacute;cisions de placement ou &agrave; r&eacute;pondre aux heartbeats des workers, ce qui peut d&eacute;stabiliser tout le cluster.</p></li><li class="list__item" id="baf4ee_80"><p id="baf4ee_83">Swarm utilise l'algorithme de consensus <span class="control" id="baf4ee_84">Raft</span> pour &eacute;lire un leader parmi les managers. Il faut une majorit&eacute; ( quorum) pour prendre des d&eacute;cisions. Avec 3 managers, on tol&egrave;re 1 panne. Avec 2, aucune panne tol&eacute;r&eacute;e (pas de majorit&eacute;). Un nombre impair optimise donc le ratio tol&eacute;rance/ressources.</p></li><li class="list__item" id="baf4ee_81"><p id="baf4ee_85">Un r&eacute;seau <code class="code" id="baf4ee_86">bridge</code> est local &agrave; une seule machine Docker. Un r&eacute;seau <code class="code" id="baf4ee_87">overlay</code> s'&eacute;tend sur <span class="control" id="baf4ee_88">plusieurs n&oelig;uds</span> du cluster Swarm, permettant aux conteneurs de communiquer entre machines comme s'ils &eacute;taient sur le m&ecirc;me r&eacute;seau local. L'overlay encapsule les paquets via VXLAN.</p></li></ol></div></div></section></section><section class="chapter"><h2 id="7-2-cr-ation-des-vms-avec-multipass" data-toc="7-2-cr-ation-des-vms-avec-multipass">7.2 &mdash; Cr&eacute;ation des VMs avec Multipass</h2><p id="baf4ee_89"><a href="https://multipass.run/" id="baf4ee_93" data-external="true" rel="noopener noreferrer" target="_blank">Multipass</a> est un outil de Canonical qui permet de cr&eacute;er des VMs Ubuntu l&eacute;g&egrave;res en quelques secondes. Nous l'utilisons pour simuler un cluster de 3 machines.</p><section class="chapter"><h3 id="installation-de-multipass" data-toc="installation-de-multipass">Installation de Multipass</h3><p id="baf4ee_94">Installez Multipass selon votre syst&egrave;me d'exploitation depuis <a href="https://multipass.run/install" id="baf4ee_97" data-external="true" rel="noopener noreferrer" target="_blank">multipass.run/install</a>.</p><p id="baf4ee_95">V&eacute;rifiez l'installation :</p><div class="code-block" data-lang="bash">
+multipass version
+</div></section><section class="chapter"><h3 id="cr-ation-des-3-vms" data-toc="cr-ation-des-3-vms">Cr&eacute;ation des 3 VMs</h3><p id="baf4ee_98">Nous avons besoin de 3 VMs : un manager et deux workers.</p><p id="baf4ee_99">Cr&eacute;ez-les avec les ressources suivantes :</p><div class="table-wrapper"><table class="wide" id="baf4ee_100"><thead><tr class="ijRowHead" id="baf4ee_104"><th id="baf4ee_108"><p>VM</p></th><th id="baf4ee_109"><p>CPU</p></th><th id="baf4ee_110"><p>RAM</p></th><th id="baf4ee_111"><p>Disque</p></th></tr></thead><tbody><tr id="baf4ee_105"><td id="baf4ee_112"><p>manager</p></td><td id="baf4ee_113"><p>2</p></td><td id="baf4ee_114"><p>4G</p></td><td id="baf4ee_115"><p>20G</p></td></tr><tr id="baf4ee_106"><td id="baf4ee_116"><p>worker-1</p></td><td id="baf4ee_117"><p>2</p></td><td id="baf4ee_118"><p>4G</p></td><td id="baf4ee_119"><p>20G</p></td></tr><tr id="baf4ee_107"><td id="baf4ee_120"><p>worker-2</p></td><td id="baf4ee_121"><p>2</p></td><td id="baf4ee_122"><p>4G</p></td><td id="baf4ee_123"><p>20G</p></td></tr></tbody></table></div><aside class="prompt" data-type="tip" data-title="" id="baf4ee_101"><p id="baf4ee_124"><span class="control" id="baf4ee_125">&Agrave; vous de jouer</span>: utilisez la commande <code class="code" id="baf4ee_126">multipass launch</code> avec les options <code class="code" id="baf4ee_127">--name</code>, <code class="code" id="baf4ee_128">--cpus</code>, <code class="code" id="baf4ee_129">--memory</code> et <code class="code" id="baf4ee_130">--disk</code> pour cr&eacute;er les 3 VMs.</p></aside><p id="baf4ee_102">Une fois cr&eacute;&eacute;es, v&eacute;rifiez leur &eacute;tat et <span class="control" id="baf4ee_131">notez les adresses IP</span> de chaque VM &mdash; vous en aurez besoin tout au long du lab.</p><aside class="prompt" data-type="tip" data-title="" id="baf4ee_103"><p id="baf4ee_132"><span class="control" id="baf4ee_133">Astuce</span>: <code class="code" id="baf4ee_134">multipass list</code> affiche l'&eacute;tat et l'IP de chaque VM.</p></aside></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_2" data-toc="correction_2">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+# Création des 3 VMs
+multipass launch --name manager --cpus 2 --memory 4G --disk 20G
+multipass launch --name worker-1 --cpus 2 --memory 4G --disk 20G
+multipass launch --name worker-2 --cpus 2 --memory 4G --disk 20G
+
+# Vérification
+multipass list
+</div><p id="baf4ee_136">R&eacute;sultat attendu (les IPs varieront) :</p><div class="code-block" data-lang="none">
+Name        State    IPv4            Image
+manager     Running  192.168.64.2    Ubuntu 24.04 LTS
+worker-1    Running  192.168.64.3    Ubuntu 24.04 LTS
+worker-2    Running  192.168.64.4    Ubuntu 24.04 LTS
+</div><p id="baf4ee_138">Vous pouvez aussi tester la connectivit&eacute; entre VMs :</p><div class="code-block" data-lang="bash">
+# Depuis le manager, pinger un worker
+multipass exec manager -- ping -c 2 &lt;IP_WORKER_1&gt;
+</div></div></div></section></section><section class="chapter"><h2 id="7-3-installation-de-docker-sur-les-vms" data-toc="7-3-installation-de-docker-sur-les-vms">7.3 &mdash; Installation de Docker sur les VMs</h2><p id="baf4ee_141">Docker doit &ecirc;tre install&eacute; sur <span class="control" id="baf4ee_144">chacune des 3 VMs</span>. Nous utilisons le script d'installation officiel.</p><section class="chapter"><h3 id="vous-de-jouer_1" data-toc="vous-de-jouer_1">&Agrave; vous de jouer</h3><p id="baf4ee_145">Pour chaque VM, ex&eacute;cutez le script d'installation Docker officiel via <code class="code" id="baf4ee_150">multipass exec</code>. Le script se trouve &agrave; l'URL <code class="code" id="baf4ee_151">https://get.docker.com</code> et s'ex&eacute;cute avec <code class="code" id="baf4ee_152">sh</code>.</p><p id="baf4ee_146">Apr&egrave;s l'installation, ajoutez l'utilisateur <code class="code" id="baf4ee_153">ubuntu</code> au groupe <code class="code" id="baf4ee_154">docker</code> pour &eacute;viter d'utiliser <code class="code" id="baf4ee_155">sudo</code>:</p><div class="code-block" data-lang="bash">
+multipass exec &lt;nom-vm&gt; -- sudo usermod -aG docker ubuntu
+</div><aside class="prompt" data-type="tip" data-title="" id="baf4ee_148"><p id="baf4ee_156"><span class="control" id="baf4ee_157">Important</span>: apr&egrave;s avoir ajout&eacute; l'utilisateur au groupe docker, il faut red&eacute;marrer la session. Utilisez <code class="code" id="baf4ee_158">multipass restart &lt;nom-vm&gt;</code> ou <code class="code" id="baf4ee_159">multipass exec &lt;nom-vm&gt; -- newgrp docker</code>.</p></aside><p id="baf4ee_149">V&eacute;rifiez l'installation sur chaque VM avec <code class="code" id="baf4ee_160">docker --version</code>.</p></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_3" data-toc="correction_3">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+# Installation de Docker sur les 3 VMs
+multipass exec manager -- bash -c &quot;curl -fsSL https://get.docker.com | sh&quot;
+multipass exec worker-1 -- bash -c &quot;curl -fsSL https://get.docker.com | sh&quot;
+multipass exec worker-2 -- bash -c &quot;curl -fsSL https://get.docker.com | sh&quot;
+
+# Ajout de l'utilisateur ubuntu au groupe docker
+multipass exec manager -- sudo usermod -aG docker ubuntu
+multipass exec worker-1 -- sudo usermod -aG docker ubuntu
+multipass exec worker-2 -- sudo usermod -aG docker ubuntu
+
+# Redémarrage pour appliquer le changement de groupe
+multipass restart manager worker-1 worker-2
+
+# Vérification (sans sudo)
+multipass exec manager -- docker --version
+multipass exec worker-1 -- docker --version
+multipass exec worker-2 -- docker --version
+</div></div></div></section></section><section class="chapter"><h2 id="7-4-initialisation-du-cluster-swarm" data-toc="7-4-initialisation-du-cluster-swarm">7.4 &mdash; Initialisation du cluster Swarm</h2><p id="baf4ee_163">C'est le moment de transformer ces 3 machines ind&eacute;pendantes en un cluster Swarm.</p><section class="chapter"><h3 id="tape-1-initialiser-le-swarm-sur-le-manager" data-toc="tape-1-initialiser-le-swarm-sur-le-manager">&Eacute;tape 1 : Initialiser le Swarm sur le manager</h3><p id="baf4ee_168">Connectez-vous au manager :</p><div class="code-block" data-lang="bash">
+multipass shell manager
+</div><p id="baf4ee_170">Initialisez le Swarm. La commande <code class="code" id="baf4ee_173">docker swarm init</code> accepte l'option <code class="code" id="baf4ee_174">--advertise-addr</code> qui indique aux autres n&oelig;uds sur quelle IP contacter le manager.</p><aside class="prompt" data-type="tip" data-title="" id="baf4ee_171"><p id="baf4ee_175"><span class="control" id="baf4ee_176">&Agrave; vous de jouer</span>: initialisez le Swarm sur le manager en utilisant son adresse IP.</p></aside><p id="baf4ee_172">Lorsque l'initialisation r&eacute;ussit, Docker affiche une commande <code class="code" id="baf4ee_177">docker swarm join</code> avec un token. **Copiez cette commande ** &mdash; elle servira &agrave; connecter les workers.</p></section><section class="chapter"><h3 id="tape-2-connecter-les-workers" data-toc="tape-2-connecter-les-workers">&Eacute;tape 2 : Connecter les workers</h3><p id="baf4ee_178">Ouvrez un nouveau terminal pour chaque worker (<code class="code" id="baf4ee_179">multipass shell worker-1</code>, etc.) et ex&eacute;cutez la commande <code class="code" id="baf4ee_180">docker swarm join</code> copi&eacute;e pr&eacute;c&eacute;demment.</p></section><section class="chapter"><h3 id="tape-3-v-rification_1" data-toc="tape-3-v-rification_1">&Eacute;tape 3 : V&eacute;rification</h3><p id="baf4ee_181">De retour sur le manager, v&eacute;rifiez l'&eacute;tat du cluster.</p><aside class="prompt" data-type="tip" data-title="" id="baf4ee_182"><p id="baf4ee_184"><span class="control" id="baf4ee_185">&Agrave; vous de jouer</span>: quelle commande affiche la liste des n&oelig;uds du cluster avec leur r&ocirc;le et leur statut ?</p></aside><p id="baf4ee_183">Vous devez voir 3 n&oelig;uds : 1 Leader (manager) et 2 workers, tous au statut <code class="code" id="baf4ee_186">Ready</code>.</p></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_4" data-toc="correction_4">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+# Sur le manager
+multipass shell manager
+
+# Initialisation (remplacez par l'IP réelle du manager)
+docker swarm init --advertise-addr 192.168.64.2
+
+# La commande affiche quelque chose comme :
+# docker swarm join --token SWMTKN-1-xxxxx 192.168.64.2:2377
+
+# Sur worker-1
+multipass shell worker-1
+docker swarm join --token SWMTKN-1-xxxxx 192.168.64.2:2377
+
+# Sur worker-2
+multipass shell worker-2
+docker swarm join --token SWMTKN-1-xxxxx 192.168.64.2:2377
+
+# Vérification sur le manager
+docker node ls
+</div><p id="baf4ee_188">R&eacute;sultat attendu :</p><div class="code-block" data-lang="none">
+ID             HOSTNAME   STATUS   AVAILABILITY   MANAGER STATUS   ENGINE VERSION
+abc123 *       manager    Ready    Active         Leader           27.x.x
+def456         worker-1   Ready    Active                          27.x.x
+ghi789         worker-2   Ready    Active                          27.x.x
+</div><aside class="prompt" data-type="tip" data-title="" id="baf4ee_190"><p id="baf4ee_192"><span class="control" id="baf4ee_194">Astuce</span>: si vous perdez le token, r&eacute;cup&eacute;rez-le sur le manager avec :</p><div class="code-block" data-lang="bash">
+docker swarm join-token worker
+</div></aside></div></div></section></section><section class="chapter"><h2 id="7-5-pr-paration-des-images-docker" data-toc="7-5-pr-paration-des-images-docker">7.5 &mdash; Pr&eacute;paration des images Docker</h2><p id="baf4ee_195">En mode Docker Compose local, Docker construit les images &agrave; la vol&eacute;e. En mode Swarm, les workers doivent <span class="control" id="baf4ee_199">pouvoir acc&eacute;der aux images</span>. Comme nous n'avons pas de registry distant, nous allons mettre en place un <span class="control" id="baf4ee_200">registry priv&eacute;</span> sur le manager.</p><section class="chapter"><h3 id="tape-1-lancer-un-registry-local" data-toc="tape-1-lancer-un-registry-local">&Eacute;tape 1 : Lancer un registry local</h3><p id="baf4ee_201">Sur le manager, d&eacute;ployez un registry Docker en tant que service Swarm :</p><div class="code-block" data-lang="bash">
+docker service create --name registry --publish published=5000,target=5000 registry:2
+</div><p id="baf4ee_203">V&eacute;rifiez qu'il tourne :</p><div class="code-block" data-lang="bash">
+docker service ls
+curl http://localhost:5000/v2/_catalog
+</div></section><section class="chapter"><h3 id="tape-2-builder-et-pousser-les-images" data-toc="tape-2-builder-et-pousser-les-images">&Eacute;tape 2 : Builder et pousser les images</h3><p id="baf4ee_205">Toujours sur le manager, vous devez copier le code source du projet Yapuka, builder les images et les pousser dans le registry local.</p><aside class="prompt" data-type="tip" data-title="" id="baf4ee_206"><p id="baf4ee_207"><span class="control" id="baf4ee_209">&Agrave; vous de jouer</span>:</p><ol class="list _decimal" id="baf4ee_208" type="1"><li class="list__item" id="baf4ee_210"><p id="baf4ee_213">Transf&eacute;rez le dossier du projet sur le manager (utilisez <code class="code" id="baf4ee_214">multipass transfer</code> ou <code class="code" id="baf4ee_215">multipass mount</code>)</p></li><li class="list__item" id="baf4ee_211"><p id="baf4ee_216">Buildez les images pour le backend PHP et le frontend React en les taguant avec le pr&eacute;fixe <code class="code" id="baf4ee_217">localhost:5000/</code> (ex : <code class="code" id="baf4ee_218">localhost:5000/yapuka-php:latest</code>)</p></li><li class="list__item" id="baf4ee_212"><p id="baf4ee_219">Poussez-les dans le registry avec <code class="code" id="baf4ee_220">docker push</code></p></li></ol></aside></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_5" data-toc="correction_5">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+# Depuis votre machine hôte — transférer le code
+# Option 1 : monter le dossier
+multipass mount /chemin/vers/yapuka manager:/home/ubuntu/yapuka
+
+# Option 2 : copier les fichiers
+multipass transfer -r /chemin/vers/yapuka manager:/home/ubuntu/yapuka
+
+# Sur le manager
+multipass shell manager
+cd ~/yapuka
+
+# Builder les images avec le tag du registry local
+docker build -t localhost:5000/yapuka-php:latest ./api
+docker build -t localhost:5000/yapuka-front:latest ./front
+
+# Pousser les images dans le registry
+docker push localhost:5000/yapuka-php:latest
+docker push localhost:5000/yapuka-front:latest
+
+# Vérifier que les images sont dans le registry
+curl http://localhost:5000/v2/_catalog
+# Résultat attendu : {&quot;repositories&quot;:[&quot;yapuka-php&quot;,&quot;yapuka-front&quot;]}
+</div><aside class="prompt" data-type="tip" data-title="" id="baf4ee_222"><p id="baf4ee_224"><span class="control" id="baf4ee_225">Note</span>: l'image <code class="code" id="baf4ee_226">nginx:alpine</code>, <code class="code" id="baf4ee_227">postgres:16-alpine</code> et <code class="code" id="baf4ee_228">redis:7-alpine</code> sont des images publiques. Swarm les tirera automatiquement depuis Docker Hub sur chaque n&oelig;ud.</p></aside></div></div></section></section><section class="chapter"><h2 id="7-6-adaptation-du-docker-compose-yml-en-stack-swarm" data-toc="7-6-adaptation-du-docker-compose-yml-en-stack-swarm">7.6 &mdash; Adaptation du docker-compose.yml en Stack Swarm</h2><p id="baf4ee_229">Le fichier <code class="code" id="baf4ee_233">docker-compose.yml</code> utilis&eacute; en d&eacute;veloppement ne convient pas directement &agrave; Swarm. Il faut l'adapter en ajoutant des directives <code class="code" id="baf4ee_234">deploy</code> et en rempla&ccedil;ant les <code class="code" id="baf4ee_235">build</code> par des <code class="code" id="baf4ee_236">image</code>.</p><section class="chapter"><h3 id="diff-rences-cl-s-entre-compose-et-stack" data-toc="diff-rences-cl-s-entre-compose-et-stack">Diff&eacute;rences cl&eacute;s entre Compose et Stack</h3><div class="table-wrapper"><table class="wide" id="baf4ee_237"><thead><tr class="ijRowHead" id="baf4ee_238"><th id="baf4ee_245"><p>Aspect</p></th><th id="baf4ee_246"><p>Docker Compose</p></th><th id="baf4ee_247"><p>Docker Stack (Swarm)</p></th></tr></thead><tbody><tr id="baf4ee_239"><td id="baf4ee_248"><p>Build</p></td><td id="baf4ee_249"><p><code class="code" id="baf4ee_251">build: ./api</code></p></td><td id="baf4ee_250"><p>❌ Non support&eacute; &mdash; utiliser <code class="code" id="baf4ee_252">image:</code></p></td></tr><tr id="baf4ee_240"><td id="baf4ee_253"><p>Volumes bind</p></td><td id="baf4ee_254"><p><code class="code" id="baf4ee_256">./api:/var/www/api</code></p></td><td id="baf4ee_255"><p>❌ D&eacute;conseill&eacute; &mdash; les fichiers ne sont pas sur tous les n&oelig;uds</p></td></tr><tr id="baf4ee_241"><td id="baf4ee_257"><p>R&eacute;seau par d&eacute;faut</p></td><td id="baf4ee_258"><p><code class="code" id="baf4ee_260">bridge</code></p></td><td id="baf4ee_259"><p><code class="code" id="baf4ee_261">overlay</code></p></td></tr><tr id="baf4ee_242"><td id="baf4ee_262"><p>R&eacute;plication</p></td><td id="baf4ee_263"><p>Non</p></td><td id="baf4ee_264"><p><code class="code" id="baf4ee_265">deploy.replicas</code></p></td></tr><tr id="baf4ee_243"><td id="baf4ee_266"><p>Placement</p></td><td id="baf4ee_267"><p>Non</p></td><td id="baf4ee_268"><p><code class="code" id="baf4ee_269">deploy.placement.constraints</code></p></td></tr><tr id="baf4ee_244"><td id="baf4ee_270"><p>Restart</p></td><td id="baf4ee_271"><p><code class="code" id="baf4ee_273">restart: always</code></p></td><td id="baf4ee_272"><p><code class="code" id="baf4ee_274">deploy.restart_policy</code></p></td></tr></tbody></table></div></section><section class="chapter"><h3 id="vous-de-jouer_2" data-toc="vous-de-jouer_2">&Agrave; vous de jouer</h3><p id="baf4ee_275">Cr&eacute;ez un fichier <code class="code" id="baf4ee_281">stack.yml</code> &agrave; la racine du projet en adaptant le <code class="code" id="baf4ee_282">docker-compose.yml</code> existant. Voici les consignes :</p><p id="baf4ee_276"><span class="control" id="baf4ee_283">Services et replicas :</span></p><div class="table-wrapper"><table class="wide" id="baf4ee_277"><thead><tr class="ijRowHead" id="baf4ee_284"><th id="baf4ee_290"><p>Service</p></th><th id="baf4ee_291"><p>Image</p></th><th id="baf4ee_292"><p>Replicas</p></th><th id="baf4ee_293"><p>Contrainte de placement</p></th></tr></thead><tbody><tr id="baf4ee_285"><td id="baf4ee_294"><p>nginx</p></td><td id="baf4ee_295"><p><code class="code" id="baf4ee_298">nginx:alpine</code></p></td><td id="baf4ee_296"><p>1</p></td><td id="baf4ee_297"><p>manager</p></td></tr><tr id="baf4ee_286"><td id="baf4ee_299"><p>php</p></td><td id="baf4ee_300"><p><code class="code" id="baf4ee_303">localhost:5000/yapuka-php:latest</code></p></td><td id="baf4ee_301"><p>2</p></td><td id="baf4ee_302"><p>worker</p></td></tr><tr id="baf4ee_287"><td id="baf4ee_304"><p>front</p></td><td id="baf4ee_305"><p><code class="code" id="baf4ee_308">localhost:5000/yapuka-front:latest</code></p></td><td id="baf4ee_306"><p>2</p></td><td id="baf4ee_307"><p>worker</p></td></tr><tr id="baf4ee_288"><td id="baf4ee_309"><p>database</p></td><td id="baf4ee_310"><p><code class="code" id="baf4ee_313">postgres:16-alpine</code></p></td><td id="baf4ee_311"><p>1</p></td><td id="baf4ee_312"><p>manager</p></td></tr><tr id="baf4ee_289"><td id="baf4ee_314"><p>redis</p></td><td id="baf4ee_315"><p><code class="code" id="baf4ee_318">redis:7-alpine</code></p></td><td id="baf4ee_316"><p>1</p></td><td id="baf4ee_317"><p>manager</p></td></tr></tbody></table></div><p id="baf4ee_278"><span class="control" id="baf4ee_319">R&egrave;gles &agrave; respecter :</span></p><ol class="list _decimal" id="baf4ee_279" type="1"><li class="list__item" id="baf4ee_320"><p id="baf4ee_328">Remplacer tous les <code class="code" id="baf4ee_329">build:</code> par des <code class="code" id="baf4ee_330">image:</code></p></li><li class="list__item" id="baf4ee_321"><p id="baf4ee_331">Supprimer les volumes bind mounts de d&eacute;veloppement (<code class="code" id="baf4ee_332">./api:/var/www/api</code>, etc.)</p></li><li class="list__item" id="baf4ee_322"><p id="baf4ee_333">Ajouter une section <code class="code" id="baf4ee_334">deploy</code> &agrave; chaque service avec : <code class="code" id="baf4ee_335">replicas</code>, <code class="code" id="baf4ee_336">restart_policy</code> (condition: on-failure), <code class="code" id="baf4ee_337">placement.constraints</code></p></li><li class="list__item" id="baf4ee_323"><p id="baf4ee_338">Pour <code class="code" id="baf4ee_339">php</code> et <code class="code" id="baf4ee_340">front</code>, ajouter une <code class="code" id="baf4ee_341">update_config</code> avec <code class="code" id="baf4ee_342">parallelism: 1</code> et <code class="code" id="baf4ee_343">delay: 10s</code></p></li><li class="list__item" id="baf4ee_324"><p id="baf4ee_344">Remplacer le r&eacute;seau <code class="code" id="baf4ee_345">yapuka</code> par un r&eacute;seau overlay (il suffit de changer le driver)</p></li><li class="list__item" id="baf4ee_325"><p id="baf4ee_346">Conserver les volumes nomm&eacute;s pour <code class="code" id="baf4ee_347">database</code> et <code class="code" id="baf4ee_348">redis</code></p></li><li class="list__item" id="baf4ee_326"><p id="baf4ee_349">Le <code class="code" id="baf4ee_350">healthcheck</code> de PostgreSQL doit rester</p></li><li class="list__item" id="baf4ee_327"><p id="baf4ee_351">La configuration nginx doit &ecirc;tre fournie via un <span class="control" id="baf4ee_352">Docker config</span> ou mont&eacute;e diff&eacute;remment (voir astuce ci-dessous)</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="baf4ee_280"><p id="baf4ee_353"><span class="control" id="baf4ee_357">Astuce pour la config Nginx</span>: en Swarm, on utilise <code class="code" id="baf4ee_358">docker config</code> pour distribuer des fichiers de configuration &agrave; tous les n&oelig;uds :</p><div class="code-block" data-lang="bash">
+docker config create nginx_conf ./docker/nginx/default.conf
+</div><p id="baf4ee_355">Puis dans le stack.yml :</p><div class="code-block" data-lang="yaml">
+configs:
+  nginx_conf:
+    external: true
+
+services:
+  nginx:
+    configs:
+      - source: nginx_conf
+        target: /etc/nginx/conf.d/default.conf
+</div></aside></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_6" data-toc="correction_6">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="yaml">
+# =============================================================================
+# stack.yml - Déploiement Swarm de Yapuka
+# =============================================================================
+# Fichier adapté depuis docker-compose.yml pour Docker Swarm.
+# Déploiement : docker stack deploy -c stack.yml yapuka
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # Nginx - Reverse proxy (déployé sur le manager)
+  # ===========================================================================
+  nginx:
+    image: nginx:alpine
+    ports:
+      - &quot;8080:80&quot;
+    configs:
+      - source: nginx_conf
+        target: /etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+      - front
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+    networks:
+      - yapuka
+
+  # ===========================================================================
+  # PHP-FPM - Backend Symfony (répliqué sur les workers)
+  # ===========================================================================
+  php:
+    image: localhost:5000/yapuka-php:latest
+    environment:
+      APP_ENV: prod
+      DATABASE_URL: &quot;postgresql://yapuka:yapuka@database:5432/yapuka?serverVersion=16&quot;
+      REDIS_URL: &quot;redis://redis:6379&quot;
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == worker
+    depends_on:
+      - database
+      - redis
+    networks:
+      - yapuka
+
+  # ===========================================================================
+  # Frontend React (répliqué sur les workers)
+  # ===========================================================================
+  front:
+    image: localhost:5000/yapuka-front:latest
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == worker
+    networks:
+      - yapuka
+
+  # ===========================================================================
+  # PostgreSQL - Base de données (sur le manager pour la persistence)
+  # ===========================================================================
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: yapuka
+      POSTGRES_USER: yapuka
+      POSTGRES_PASSWORD: yapuka
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ &quot;CMD-SHELL&quot;, &quot;pg_isready -U yapuka&quot; ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+    networks:
+      - yapuka
+
+  # ===========================================================================
+  # Redis - Cache (sur le manager)
+  # ===========================================================================
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      placement:
+        constraints:
+          - node.role == manager
+    networks:
+      - yapuka
+
+# =============================================================================
+# Configs (fichiers distribués à travers le cluster)
+# =============================================================================
+configs:
+  nginx_conf:
+    external: true
+
+# =============================================================================
+# Volumes persistants
+# =============================================================================
+volumes:
+  db_data:
+  redis_data:
+
+# =============================================================================
+# Réseau overlay (communication inter-nœuds)
+# =============================================================================
+networks:
+  yapuka:
+    driver: overlay
+</div><aside class="prompt" data-type="tip" data-title="" id="baf4ee_360"><p id="baf4ee_362"><span class="control" id="baf4ee_363">Note sur les volumes</span>: en Swarm, les volumes <code class="code" id="baf4ee_364">db_data</code> et <code class="code" id="baf4ee_365">redis_data</code> sont <span class="control" id="baf4ee_366">locaux au n&oelig;ud</span> o&ugrave; le conteneur tourne. C'est pourquoi on contraint PostgreSQL et Redis sur le manager &mdash; ainsi le volume reste toujours sur la m&ecirc;me machine. En production, on utiliserait un volume driver distribu&eacute; (NFS, Ceph, etc.) ou un service de base de donn&eacute;es manag&eacute;.</p></aside></div></div></section></section><section class="chapter"><h2 id="7-7-d-ploiement-de-la-stack" data-toc="7-7-d-ploiement-de-la-stack">7.7 &mdash; D&eacute;ploiement de la Stack</h2><p id="baf4ee_367">Tout est pr&ecirc;t. D&eacute;ployons l'application sur le cluster.</p><section class="chapter"><h3 id="tape-1-cr-er-la-config-nginx" data-toc="tape-1-cr-er-la-config-nginx">&Eacute;tape 1 : Cr&eacute;er la config Nginx</h3><p id="baf4ee_372">Depuis le manager, cr&eacute;ez la config Docker pour Nginx :</p><div class="code-block" data-lang="bash">
+docker config create nginx_conf ./docker/nginx/default.conf
+</div><p id="baf4ee_374">V&eacute;rifiez :</p><div class="code-block" data-lang="bash">
+docker config ls
+</div></section><section class="chapter"><h3 id="tape-2-d-ployer-la-stack" data-toc="tape-2-d-ployer-la-stack">&Eacute;tape 2 : D&eacute;ployer la stack</h3><aside class="prompt" data-type="tip" data-title="" id="baf4ee_376"><p id="baf4ee_377"><span class="control" id="baf4ee_378">&Agrave; vous de jouer</span>: utilisez la commande <code class="code" id="baf4ee_379">docker stack deploy</code> avec l'option <code class="code" id="baf4ee_380">-c</code> pour d&eacute;ployer le fichier <code class="code" id="baf4ee_381">stack.yml</code> sous le nom <code class="code" id="baf4ee_382">yapuka</code>.</p></aside></section><section class="chapter"><h3 id="tape-3-v-rification" data-toc="tape-3-v-rification">&Eacute;tape 3 : V&eacute;rification</h3><p id="baf4ee_383">Apr&egrave;s le d&eacute;ploiement, ex&eacute;cutez les commandes suivantes et interpr&eacute;tez les r&eacute;sultats :</p><ol class="list _decimal" id="baf4ee_384" type="1"><li class="list__item" id="baf4ee_386"><p id="baf4ee_390">Listez les stacks d&eacute;ploy&eacute;es</p></li><li class="list__item" id="baf4ee_387"><p id="baf4ee_391">Listez les services de la stack <code class="code" id="baf4ee_392">yapuka</code></p></li><li class="list__item" id="baf4ee_388"><p id="baf4ee_393">Affichez la distribution des tasks du service <code class="code" id="baf4ee_394">yapuka_php</code> (sur quels n&oelig;uds tournent-elles ?)</p></li><li class="list__item" id="baf4ee_389"><p id="baf4ee_395">Acc&eacute;dez &agrave; l'application via <code class="code" id="baf4ee_396">http://&lt;IP_MANAGER&gt;:8080</code></p></li></ol><aside class="prompt" data-type="tip" data-title="" id="baf4ee_385"><p id="baf4ee_397"><span class="control" id="baf4ee_398">Patience</span>: le premier d&eacute;ploiement peut prendre 1-2 minutes le temps que les workers tirent les images depuis le registry.</p></aside></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_7" data-toc="correction_7">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+# Créer la config Nginx
+docker config create nginx_conf ./docker/nginx/default.conf
+
+# Déployer la stack
+docker stack deploy -c stack.yml yapuka
+
+# Vérifications
+docker stack ls
+# NAME      SERVICES   ORCHESTRATOR
+# yapuka    5          Swarm
+
+docker stack services yapuka
+# ID        NAME              MODE        REPLICAS   IMAGE
+# xxx       yapuka_nginx      replicated  1/1        nginx:alpine
+# xxx       yapuka_php        replicated  2/2        localhost:5000/yapuka-php:latest
+# xxx       yapuka_front      replicated  2/2        localhost:5000/yapuka-front:latest
+# xxx       yapuka_database   replicated  1/1        postgres:16-alpine
+# xxx       yapuka_redis      replicated  1/1        redis:7-alpine
+
+# Voir où tournent les tasks PHP
+docker service ps yapuka_php
+# ID        NAME            NODE       DESIRED STATE   CURRENT STATE
+# xxx       yapuka_php.1    worker-1   Running         Running 30 seconds ago
+# xxx       yapuka_php.2    worker-2   Running         Running 28 seconds ago
+
+# Test d'accès
+curl -s http://localhost:8080/api/docs | head -5
+</div><aside class="prompt" data-type="tip" data-title="" id="baf4ee_400"><p id="baf4ee_402"><span class="control" id="baf4ee_404">R&eacute;solution de probl&egrave;mes</span>: si des services restent &agrave; 0/N replicas, consultez les logs :</p><div class="code-block" data-lang="bash">
+docker service logs yapuka_php
+</div></aside></div></div></section></section><section class="chapter"><h2 id="7-8-scaling-des-services" data-toc="7-8-scaling-des-services">7.8 &mdash; Scaling des services</h2><p id="baf4ee_405">L'un des int&eacute;r&ecirc;ts majeurs de Swarm est le <span class="control" id="baf4ee_409">scaling horizontal</span>: augmenter ou diminuer le nombre de replicas d'un service &agrave; la vol&eacute;e.</p><section class="chapter"><h3 id="vous-de-jouer_3" data-toc="vous-de-jouer_3">&Agrave; vous de jouer</h3><ol class="list _decimal" id="baf4ee_410" type="1"><li class="list__item" id="baf4ee_412"><p id="baf4ee_417">Scalez le service <code class="code" id="baf4ee_418">yapuka_php</code> de 2 &agrave; <span class="control" id="baf4ee_419">4 replicas</span></p></li><li class="list__item" id="baf4ee_413"><p id="baf4ee_420">Observez la distribution des nouvelles tasks avec <code class="code" id="baf4ee_421">docker service ps</code></p></li><li class="list__item" id="baf4ee_414"><p id="baf4ee_422">V&eacute;rifiez que l'application reste accessible</p></li><li class="list__item" id="baf4ee_415"><p id="baf4ee_423">Redescendez &agrave; <span class="control" id="baf4ee_424">2 replicas</span></p></li><li class="list__item" id="baf4ee_416"><p id="baf4ee_425">Observez ce qui se passe (quelles tasks sont arr&ecirc;t&eacute;es ?)</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="baf4ee_411"><p id="baf4ee_426"><span class="control" id="baf4ee_427">Indice</span>: la commande est <code class="code" id="baf4ee_428">docker service scale &lt;service&gt;=&lt;nombre&gt;</code></p></aside></section><section class="chapter"><h3 id="questions-de-r-flexion" data-toc="questions-de-r-flexion">Questions de r&eacute;flexion</h3><ul class="list _bullet" id="baf4ee_429"><li class="list__item" id="baf4ee_430"><p id="baf4ee_432">Les nouvelles tasks sont-elles r&eacute;parties &eacute;quitablement entre les workers ?</p></li><li class="list__item" id="baf4ee_431"><p id="baf4ee_433">Que se passe-t-il si on scale &agrave; un nombre sup&eacute;rieur au nombre de workers ?</p></li></ul></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_8" data-toc="correction_8">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+# Scaler PHP à 4 replicas
+docker service scale yapuka_php=4
+
+# Observer la distribution
+docker service ps yapuka_php
+# ID        NAME            NODE       DESIRED STATE   CURRENT STATE
+# xxx       yapuka_php.1    worker-1   Running         Running 5 minutes ago
+# xxx       yapuka_php.2    worker-2   Running         Running 5 minutes ago
+# xxx       yapuka_php.3    worker-1   Running         Running 10 seconds ago
+# xxx       yapuka_php.4    worker-2   Running         Running 8 seconds ago
+
+# Tester l'accès
+curl http://localhost:8080/api/tasks/stats
+
+# Réduire à 2 replicas
+docker service scale yapuka_php=2
+
+# Observer : les tasks les plus récentes sont supprimées en premier
+docker service ps yapuka_php
+</div><p id="baf4ee_435"><span class="control" id="baf4ee_438">R&eacute;ponses aux questions</span>:</p><ul class="list _bullet" id="baf4ee_436"><li class="list__item" id="baf4ee_439"><p id="baf4ee_441">Swarm utilise une strat&eacute;gie de <span class="control" id="baf4ee_442">spread</span> par d&eacute;faut : il r&eacute;partit les tasks sur les n&oelig;uds ayant le moins de tasks de ce service, donc oui, la r&eacute;partition est &eacute;quitable.</p></li><li class="list__item" id="baf4ee_440"><p id="baf4ee_443">Si on scale &agrave; plus que le nombre de workers, plusieurs tasks tourneront sur le m&ecirc;me n&oelig;ud. Swarm n'interdit pas cela &mdash; il place simplement les tasks l&agrave; o&ugrave; c'est possible.</p></li></ul></div></div></section></section><section class="chapter"><h2 id="7-9-rolling-update-mise-jour-sans-interruption" data-toc="7-9-rolling-update-mise-jour-sans-interruption">7.9 &mdash; Rolling Update (mise &agrave; jour sans interruption)</h2><p id="baf4ee_444">Simulons une mise &agrave; jour de l'application backend sans interruption de service.</p><section class="chapter"><h3 id="tape-1-modifier-l-application" data-toc="tape-1-modifier-l-application">&Eacute;tape 1 : Modifier l'application</h3><p id="baf4ee_449">Sur le manager, faites une modification visible dans le code PHP (par exemple, changez le message de r&eacute;ponse dans un contr&ocirc;leur, ou ajoutez un header personnalis&eacute;).</p></section><section class="chapter"><h3 id="tape-2-builder-et-pousser-la-nouvelle-version" data-toc="tape-2-builder-et-pousser-la-nouvelle-version">&Eacute;tape 2 : Builder et pousser la nouvelle version</h3><aside class="prompt" data-type="tip" data-title="" id="baf4ee_450"><p id="baf4ee_452"><span class="control" id="baf4ee_454">&Agrave; vous de jouer</span>:</p><ol class="list _decimal" id="baf4ee_453" type="1"><li class="list__item" id="baf4ee_455"><p id="baf4ee_458">Rebuilder l'image PHP avec un <span class="control" id="baf4ee_459">nouveau tag</span> (ex : <code class="code" id="baf4ee_460">localhost:5000/yapuka-php:v2</code>)</p></li><li class="list__item" id="baf4ee_456"><p id="baf4ee_461">Poussez cette image dans le registry</p></li><li class="list__item" id="baf4ee_457"><p id="baf4ee_462">Mettez &agrave; jour le service pour utiliser la nouvelle image avec <code class="code" id="baf4ee_463">docker service update</code></p></li></ol></aside><aside class="prompt" data-type="tip" data-title="" id="baf4ee_451"><p id="baf4ee_464"><span class="control" id="baf4ee_465">Indice</span>: <code class="code" id="baf4ee_466">docker service update --image &lt;nouvelle-image&gt; &lt;nom-du-service&gt;</code></p></aside></section><section class="chapter"><h3 id="tape-3-observer-le-rolling-update" data-toc="tape-3-observer-le-rolling-update">&Eacute;tape 3 : Observer le rolling update</h3><p id="baf4ee_467">Pendant la mise &agrave; jour, ex&eacute;cutez dans un autre terminal :</p><div class="code-block" data-lang="bash">
+watch docker service ps yapuka_php
+</div><p id="baf4ee_469">Vous devriez voir les anciennes tasks s'arr&ecirc;ter une par une et les nouvelles d&eacute;marrer, conform&eacute;ment &agrave; la configuration <code class="code" id="baf4ee_470">update_config</code> (parallelism: 1, delay: 10s).</p></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_9" data-toc="correction_9">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+# Builder la v2
+docker build -t localhost:5000/yapuka-php:v2 ./api
+
+# Pousser dans le registry
+docker push localhost:5000/yapuka-php:v2
+
+# Mettre à jour le service (rolling update)
+docker service update --image localhost:5000/yapuka-php:v2 yapuka_php
+
+# Observer en temps réel (dans un autre terminal)
+watch docker service ps yapuka_php
+
+# On voit les tasks se remplacer une par une :
+# yapuka_php.1  localhost:5000/yapuka-php:v2  worker-1  Running
+# yapuka_php.1  localhost:5000/yapuka-php:v1  worker-1  Shutdown
+# yapuka_php.2  localhost:5000/yapuka-php:v2  worker-2  Running   (après 10s)
+# yapuka_php.2  localhost:5000/yapuka-php:v1  worker-2  Shutdown
+</div><aside class="prompt" data-type="tip" data-title="" id="baf4ee_472"><p id="baf4ee_474"><span class="control" id="baf4ee_475">Point cl&eacute;</span>: pendant le rolling update, au moins 1 replica de l'ancienne version reste active tant que la nouvelle n'est pas pr&ecirc;te. L'application reste donc accessible en permanence.</p></aside></div></div></section></section><section class="chapter"><h2 id="7-10-rollback" data-toc="7-10-rollback">7.10 &mdash; Rollback</h2><p id="baf4ee_476">Que se passe-t-il si la v2 est cass&eacute;e ? Swarm permet de revenir &agrave; la version pr&eacute;c&eacute;dente instantan&eacute;ment.</p><section class="chapter"><h3 id="vous-de-jouer_4" data-toc="vous-de-jouer_4">&Agrave; vous de jouer</h3><ol class="list _decimal" id="baf4ee_479" type="1"><li class="list__item" id="baf4ee_481"><p id="baf4ee_484">Effectuez un rollback du service <code class="code" id="baf4ee_485">yapuka_php</code></p></li><li class="list__item" id="baf4ee_482"><p id="baf4ee_486">V&eacute;rifiez que le service est revenu &agrave; l'image pr&eacute;c&eacute;dente</p></li><li class="list__item" id="baf4ee_483"><p id="baf4ee_487">Consultez l'historique des tasks pour voir les deux versions</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="baf4ee_480"><p id="baf4ee_488"><span class="control" id="baf4ee_489">Indice</span>: la commande est <code class="code" id="baf4ee_490">docker service rollback &lt;nom-du-service&gt;</code></p></aside></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_10" data-toc="correction_10">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+# Rollback
+docker service rollback yapuka_php
+
+# Vérifier l'image utilisée
+docker service inspect --pretty yapuka_php | grep Image
+# Image: localhost:5000/yapuka-php:latest
+
+# Voir l'historique complet
+docker service ps yapuka_php
+# Montre les tasks v2 (Shutdown) et les tasks v1 restaurées (Running)
+</div></div></div></section></section><section class="chapter"><h2 id="7-11-tests-de-haute-disponibilit" data-toc="7-11-tests-de-haute-disponibilit">7.11 &mdash; Tests de haute disponibilit&eacute;</h2><p id="baf4ee_493">C'est le moment de casser des choses volontairement pour v&eacute;rifier que Swarm tient ses promesses.</p><section class="chapter"><h3 id="test-1-panne-d-un-worker" data-toc="test-1-panne-d-un-worker">Test 1 : Panne d'un worker</h3><aside class="prompt" data-type="tip" data-title="" id="baf4ee_498"><p id="baf4ee_499"><span class="control" id="baf4ee_501">&Agrave; vous de jouer</span>:</p><ol class="list _decimal" id="baf4ee_500" type="1"><li class="list__item" id="baf4ee_502"><p id="baf4ee_508">Depuis votre machine h&ocirc;te, arr&ecirc;tez brutalement <code class="code" id="baf4ee_509">worker-1</code> avec <code class="code" id="baf4ee_510">multipass stop worker-1</code></p></li><li class="list__item" id="baf4ee_503"><p id="baf4ee_511">Sur le manager, observez l'&eacute;tat des n&oelig;uds (<code class="code" id="baf4ee_512">docker node ls</code>)</p></li><li class="list__item" id="baf4ee_504"><p id="baf4ee_513">Observez la redistribution des tasks (<code class="code" id="baf4ee_514">docker service ps yapuka_php</code>)</p></li><li class="list__item" id="baf4ee_505"><p id="baf4ee_515">Testez que l'application est toujours accessible</p></li><li class="list__item" id="baf4ee_506"><p id="baf4ee_516">Red&eacute;marrez <code class="code" id="baf4ee_517">worker-1</code> avec <code class="code" id="baf4ee_518">multipass start worker-1</code></p></li><li class="list__item" id="baf4ee_507"><p id="baf4ee_519">Observez sa r&eacute;int&eacute;gration dans le cluster</p></li></ol></aside></section><section class="chapter"><h3 id="test-2-panne-d-un-conteneur" data-toc="test-2-panne-d-un-conteneur">Test 2 : Panne d'un conteneur</h3><aside class="prompt" data-type="tip" data-title="" id="baf4ee_520"><p id="baf4ee_521"><span class="control" id="baf4ee_523">&Agrave; vous de jouer</span>:</p><ol class="list _decimal" id="baf4ee_522" type="1"><li class="list__item" id="baf4ee_524"><p id="baf4ee_527">Identifiez un conteneur PHP qui tourne sur un worker : <code class="code" id="baf4ee_528">docker service ps yapuka_php</code></p></li><li class="list__item" id="baf4ee_525"><p id="baf4ee_529">Connectez-vous au worker concern&eacute; et tuez le conteneur avec <code class="code" id="baf4ee_530">docker kill &lt;id&gt;</code></p></li><li class="list__item" id="baf4ee_526"><p id="baf4ee_531">Observez sur le manager : Swarm relance-t-il automatiquement un nouveau conteneur ?</p></li></ol></aside></section><section class="chapter"><h3 id="questions" data-toc="questions">Questions</h3><ul class="list _bullet" id="baf4ee_532"><li class="list__item" id="baf4ee_533"><p id="baf4ee_535">Combien de temps faut-il &agrave; Swarm pour d&eacute;tecter la panne du worker ?</p></li><li class="list__item" id="baf4ee_534"><p id="baf4ee_536">Les tasks sont-elles renvoy&eacute;es sur <code class="code" id="baf4ee_537">worker-1</code> quand il revient en ligne ?</p></li></ul></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_11" data-toc="correction_11">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+# --- Test 1 : Panne d'un worker ---
+
+# Arrêter worker-1
+multipass stop worker-1
+
+# Sur le manager : observer (attendre ~30 secondes)
+docker node ls
+# worker-1 passe en status &quot;Down&quot;
+
+docker service ps yapuka_php
+# Les tasks de worker-1 sont relancées sur worker-2
+# NAME               NODE       DESIRED STATE   CURRENT STATE
+# yapuka_php.1       worker-2   Running         Running 10 seconds ago
+# \_ yapuka_php.1   worker-1   Shutdown        Running 5 minutes ago
+# yapuka_php.2       worker-2   Running         Running 5 minutes ago
+
+# L'application reste accessible !
+curl http://localhost:8080/api/tasks/stats
+
+# Redémarrer worker-1
+multipass start worker-1
+
+# Observer la réintégration (le nœud revient en &quot;Ready&quot;)
+docker node ls
+
+# --- Test 2 : Panne d'un conteneur ---
+
+# Sur le worker, trouver l'ID du conteneur
+multipass exec worker-2 -- docker ps --filter name=yapuka_php
+
+# Tuer le conteneur
+multipass exec worker-2 -- docker kill &lt;CONTAINER_ID&gt;
+
+# Sur le manager, observer le redémarrage automatique
+docker service ps yapuka_php
+# Swarm relance un nouveau conteneur en quelques secondes
+</div><p id="baf4ee_539"><span class="control" id="baf4ee_542">R&eacute;ponses :</span></p><ul class="list _bullet" id="baf4ee_540"><li class="list__item" id="baf4ee_543"><p id="baf4ee_545">Swarm d&eacute;tecte la panne d'un n&oelig;ud en environ <span class="control" id="baf4ee_546">5 &agrave; 30 secondes</span> (configurable). Il replanifie ensuite les tasks sur les n&oelig;uds disponibles.</p></li><li class="list__item" id="baf4ee_544"><p id="baf4ee_547">Non, les tasks ne sont <span class="control" id="baf4ee_548">pas automatiquement r&eacute;&eacute;quilibr&eacute;es</span> quand un n&oelig;ud revient. Elles restent sur le n&oelig;ud o&ugrave; elles ont &eacute;t&eacute; replanifi&eacute;es. Pour forcer un r&eacute;&eacute;quilibrage, on peut utiliser <code class="code" id="baf4ee_549">docker service update --force yapuka_php</code>.</p></li></ul></div></div></section></section><section class="chapter"><h2 id="7-12-monitoring-et-logs" data-toc="7-12-monitoring-et-logs">7.12 &mdash; Monitoring et logs</h2><p id="baf4ee_550">En production, il est essentiel de pouvoir consulter les logs et l'&eacute;tat des services.</p><section class="chapter"><h3 id="vous-de-jouer" data-toc="vous-de-jouer">&Agrave; vous de jouer</h3><p id="baf4ee_553">Depuis le manager, ex&eacute;cutez les commandes n&eacute;cessaires pour :</p><ol class="list _decimal" id="baf4ee_554" type="1"><li class="list__item" id="baf4ee_556"><p id="baf4ee_561">Afficher les logs du service <code class="code" id="baf4ee_562">yapuka_php</code> (les 50 derni&egrave;res lignes)</p></li><li class="list__item" id="baf4ee_557"><p id="baf4ee_563">Suivre les logs en temps r&eacute;el (mode <code class="code" id="baf4ee_564">follow</code>)</p></li><li class="list__item" id="baf4ee_558"><p id="baf4ee_565">Inspecter la configuration d&eacute;taill&eacute;e du service <code class="code" id="baf4ee_566">yapuka_php</code></p></li><li class="list__item" id="baf4ee_559"><p id="baf4ee_567">Afficher les statistiques de consommation de ressources des conteneurs sur le manager</p></li><li class="list__item" id="baf4ee_560"><p id="baf4ee_568">Lister les tasks de <span class="control" id="baf4ee_569">tous</span> les services de la stack</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="baf4ee_555"><p id="baf4ee_570"><span class="control" id="baf4ee_571">Indices</span>: <code class="code" id="baf4ee_572">docker service logs</code>, <code class="code" id="baf4ee_573">docker service inspect --pretty</code>, <code class="code" id="baf4ee_574">docker stats</code>, <code class="code" id="baf4ee_575">docker stack ps</code></p></aside></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction" data-toc="correction">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+# 1. Dernières 50 lignes de logs
+docker service logs --tail 50 yapuka_php
+
+# 2. Suivi en temps réel
+docker service logs -f yapuka_php
+# Ctrl+C pour arrêter
+
+# 3. Inspection du service
+docker service inspect --pretty yapuka_php
+
+# 4. Stats de ressources
+docker stats --no-stream
+
+# 5. Toutes les tasks de la stack
+docker stack ps yapuka
+</div></div></div></section></section><section class="chapter"><h2 id="7-13-nettoyage" data-toc="7-13-nettoyage">7.13 &mdash; Nettoyage</h2><p id="baf4ee_578">Le lab est termin&eacute;. Nettoyons l'environnement.</p><section class="chapter"><h3 id="tapes-de-nettoyage" data-toc="tapes-de-nettoyage">&Eacute;tapes de nettoyage</h3><div class="code-block" data-lang="bash">
+# 1. Supprimer la stack (sur le manager)
+multipass exec manager -- docker stack rm yapuka
+
+# 2. Supprimer la config et le registry
+multipass exec manager -- docker config rm nginx_conf
+multipass exec manager -- docker service rm registry
+
+# 3. Quitter le Swarm (sur chaque nœud)
+multipass exec worker-1 -- docker swarm leave
+multipass exec worker-2 -- docker swarm leave
+multipass exec manager -- docker swarm leave --force
+
+# 4. Supprimer les VMs
+multipass delete manager worker-1 worker-2
+multipass purge
+</div></section></section><section class="chapter"><h2 id="r-capitulatif" data-toc="r-capitulatif">R&eacute;capitulatif</h2><p id="baf4ee_582">Voici les commandes essentielles vues dans ce lab :</p><div class="table-wrapper"><table class="wide" id="baf4ee_583"><thead><tr class="ijRowHead" id="baf4ee_585"><th id="baf4ee_597"><p>Action</p></th><th id="baf4ee_598"><p>Commande</p></th></tr></thead><tbody><tr id="baf4ee_586"><td id="baf4ee_599"><p>Initialiser Swarm</p></td><td id="baf4ee_600"><p><code class="code" id="baf4ee_601">docker swarm init --advertise-addr &lt;IP&gt;</code></p></td></tr><tr id="baf4ee_587"><td id="baf4ee_602"><p>Rejoindre un cluster</p></td><td id="baf4ee_603"><p><code class="code" id="baf4ee_604">docker swarm join --token &lt;TOKEN&gt; &lt;IP&gt;:2377</code></p></td></tr><tr id="baf4ee_588"><td id="baf4ee_605"><p>Lister les n&oelig;uds</p></td><td id="baf4ee_606"><p><code class="code" id="baf4ee_607">docker node ls</code></p></td></tr><tr id="baf4ee_589"><td id="baf4ee_608"><p>D&eacute;ployer une stack</p></td><td id="baf4ee_609"><p><code class="code" id="baf4ee_610">docker stack deploy -c stack.yml &lt;nom&gt;</code></p></td></tr><tr id="baf4ee_590"><td id="baf4ee_611"><p>Lister les services</p></td><td id="baf4ee_612"><p><code class="code" id="baf4ee_613">docker stack services &lt;nom&gt;</code></p></td></tr><tr id="baf4ee_591"><td id="baf4ee_614"><p>Voir les tasks</p></td><td id="baf4ee_615"><p><code class="code" id="baf4ee_616">docker service ps &lt;service&gt;</code></p></td></tr><tr id="baf4ee_592"><td id="baf4ee_617"><p>Scaler un service</p></td><td id="baf4ee_618"><p><code class="code" id="baf4ee_619">docker service scale &lt;service&gt;=N</code></p></td></tr><tr id="baf4ee_593"><td id="baf4ee_620"><p>Mettre &agrave; jour</p></td><td id="baf4ee_621"><p><code class="code" id="baf4ee_622">docker service update --image &lt;img&gt; &lt;service&gt;</code></p></td></tr><tr id="baf4ee_594"><td id="baf4ee_623"><p>Rollback</p></td><td id="baf4ee_624"><p><code class="code" id="baf4ee_625">docker service rollback &lt;service&gt;</code></p></td></tr><tr id="baf4ee_595"><td id="baf4ee_626"><p>Logs</p></td><td id="baf4ee_627"><p><code class="code" id="baf4ee_628">docker service logs &lt;service&gt;</code></p></td></tr><tr id="baf4ee_596"><td id="baf4ee_629"><p>Supprimer une stack</p></td><td id="baf4ee_630"><p><code class="code" id="baf4ee_631">docker stack rm &lt;nom&gt;</code></p></td></tr></tbody></table></div><section class="chapter"><h3 id="points-cl-s-retenir" data-toc="points-cl-s-retenir">Points cl&eacute;s &agrave; retenir</h3><ul class="list _bullet" id="baf4ee_632"><li class="list__item" id="baf4ee_633"><p id="baf4ee_639">Swarm transforme plusieurs machines en un cluster unifi&eacute; pilot&eacute; par des <span class="control" id="baf4ee_640">managers</span></p></li><li class="list__item" id="baf4ee_634"><p id="baf4ee_641">Les <span class="control" id="baf4ee_642">workers</span> ex&eacute;cutent les conteneurs, les <span class="control" id="baf4ee_643">managers</span> d&eacute;cident du placement</p></li><li class="list__item" id="baf4ee_635"><p id="baf4ee_644">Le <span class="control" id="baf4ee_645">routing mesh</span> permet d'acc&eacute;der &agrave; un service depuis <span class="control" id="baf4ee_646">n'importe quel n&oelig;ud</span></p></li><li class="list__item" id="baf4ee_636"><p id="baf4ee_647">Le <span class="control" id="baf4ee_648">rolling update</span> met &agrave; jour les replicas une par une sans interruption</p></li><li class="list__item" id="baf4ee_637"><p id="baf4ee_649">Le <span class="control" id="baf4ee_650">self-healing</span> red&eacute;marre automatiquement les conteneurs tomb&eacute;s et replanifie les tasks en cas de panne d'un n&oelig;ud</p></li><li class="list__item" id="baf4ee_638"><p id="baf4ee_651">Les <span class="control" id="baf4ee_652">volumes locaux</span> ne sont pas partag&eacute;s entre n&oelig;uds &mdash; c'est pourquoi on contraint les services avec &eacute;tat (DB, cache) sur un n&oelig;ud sp&eacute;cifique</p></li></ul></section></section><div class="last-modified">05 mars 2026</div><div data-feedback-placeholder="true"></div><div class="navigation-links _bottom"><a href="lab-7-intro.html" class="navigation-links__prev">7. Orchestration avec Docker Swarm</a><a href="lab-8-intro.html" class="navigation-links__next">8. D&eacute;ploiement cloud</a></div></article><div id="disqus_thread"></div></div></section></main></div><script src="https://resources.jetbrains.com/writerside/apidoc/6.25.3-b857/app.js"></script></body></html>

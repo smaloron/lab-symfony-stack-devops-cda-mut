@@ -1,0 +1,367 @@
+<!DOCTYPE html SYSTEM "about:legacy-compat">
+<html lang="en-US" data-preset="contrast" data-primary-color="#307FFF"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="UTF-8"><meta name="robots" content="noindex"><meta name="built-on" content="2026-03-05T13:50:53.489138"><title>Lab 4 &mdash; Dockerisation production du frontend React | Lab Symfony devops</title><script type="application/json" id="virtual-toc-data">[{"id":"contexte","level":0,"title":"Contexte","anchor":"#contexte"},{"id":"partie-1-analyse-de-l-application-5-min","level":0,"title":"Partie 1 — Analyse de l\u0027application (5 min)","anchor":"#partie-1-analyse-de-l-application-5-min"},{"id":"partie-2-gestion-des-variables-d-environnement-10-min","level":0,"title":"Partie 2 — Gestion des variables d\u0027environnement (10 min)","anchor":"#partie-2-gestion-des-variables-d-environnement-10-min"},{"id":"partie-3-dockerfile-multi-stage-15-min","level":0,"title":"Partie 3 — Dockerfile multi-stage (15 min)","anchor":"#partie-3-dockerfile-multi-stage-15-min"},{"id":"partie-4-configuration-nginx-pour-spa-5-min","level":0,"title":"Partie 4 — Configuration Nginx pour SPA (5 min)","anchor":"#partie-4-configuration-nginx-pour-spa-5-min"},{"id":"partie-5-build-et-validation-10-min","level":0,"title":"Partie 5 — Build et validation (10 min)","anchor":"#partie-5-build-et-validation-10-min"},{"id":"crit-res-de-validation","level":0,"title":"Critères de validation","anchor":"#crit-res-de-validation"},{"id":"pour-aller-plus-loin","level":0,"title":"Pour aller plus loin","anchor":"#pour-aller-plus-loin"}]</script><script type="application/json" id="topic-shortcuts"></script><link href="https://resources.jetbrains.com/writerside/apidoc/6.25.3-b857/app.css" rel="stylesheet"><meta name="msapplication-TileColor" content="#000000"><link rel="apple-touch-icon" sizes="180x180" href="https://jetbrains.com/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="https://jetbrains.com/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="https://jetbrains.com/favicon-16x16.png"><meta name="msapplication-TileImage" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-144x144.png"><meta name="msapplication-square70x70logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-70x70.png"><meta name="msapplication-square150x150logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-150x150.png"><meta name="msapplication-wide310x150logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-310x150.png"><meta name="msapplication-square310x310logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-310x310.png"><meta name="image" content=""><!-- Open Graph --><meta property="og:title" content="Lab 4 &mdash; Dockerisation production du frontend React | Lab Symfony devops"><meta property="og:description" content=""><meta property="og:image" content=""><meta property="og:site_name" content="Lab Symfony devops Help"><meta property="og:type" content="website"><meta property="og:locale" content="en_US"><meta property="og:url" content="writerside-documentation/lab-04.html"><!-- End Open Graph --><!-- Twitter Card --><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content=""><meta name="twitter:title" content="Lab 4 &mdash; Dockerisation production du frontend React | Lab Symfony devops"><meta name="twitter:description" content=""><meta name="twitter:creator" content=""><meta name="twitter:image:src" content=""><!-- End Twitter Card --><!-- Schema.org WebPage --><script type="application/ld+json">{
+    "@context": "http://schema.org",
+    "@type": "WebPage",
+    "@id": "writerside-documentation/lab-04.html#webpage",
+    "url": "writerside-documentation/lab-04.html",
+    "name": "Lab 4 &mdash; Dockerisation production du frontend React | Lab Symfony devops",
+    "description": "",
+    "image": "",
+    "inLanguage":"en-US"
+}</script><!-- End Schema.org --><!-- Schema.org WebSite --><script type="application/ld+json">{
+    "@type": "WebSite",
+    "@id": "writerside-documentation/#website",
+    "url": "writerside-documentation/",
+    "name": "Lab Symfony devops Help"
+}</script><!-- End Schema.org --></head><body data-id="lab-04" data-main-title="Lab 4 — Dockerisation production du frontend React" data-article-props="{&quot;seeAlsoStyle&quot;:&quot;links&quot;}" data-template="article" data-breadcrumbs="lab-4-intro.md|4. Dockerisation production d'un frontend React"><div class="wrapper"><main class="panel _main"><header class="panel__header"><div class="container"><h3>Lab Symfony devops  Help</h3><div class="panel-trigger"></div></div></header><section class="panel__content"><div class="container"><article class="article" data-shortcut-switcher="inactive"><h1 data-toc="lab-04" id="lab-04.md">Lab 4 — Dockerisation production du frontend React</h1><aside class="prompt" data-type="tip" data-title="" id="bad7ft_3"><p id="bad7ft_12"><span class="control" id="bad7ft_13">Pr&eacute;requis</span>: le projet Yapuka fonctionne en mode d&eacute;veloppement via <code class="code" id="bad7ft_14">docker compose up -d</code>. Vous avez r&eacute;alis&eacute; le lab pr&eacute;c&eacute;dent (Dockerisation Symfony) ou en comprenez les principes (multi-stage build, <code class="code" id="bad7ft_15">.dockerignore</code>, user non-root).</p></aside><section class="chapter"><h2 id="contexte" data-toc="contexte">Contexte</h2><p id="bad7ft_16">Le frontend Yapuka est une <span class="control" id="bad7ft_21">SPA</span> (Single Page Application) construite avec React 18 et Vite. En d&eacute;veloppement, Vite fournit un serveur avec Hot Module Replacement. En production, Vite g&eacute;n&egrave;re des fichiers statiques (HTML, JS, CSS) qu'un serveur web comme Nginx peut servir directement &mdash; <span class="control" id="bad7ft_22">pas besoin de Node.js en production</span>.</p><p id="bad7ft_17">Cela donne une image Docker tr&egrave;s l&eacute;g&egrave;re : seul Nginx est n&eacute;cessaire pour servir les fichiers compil&eacute;s.</p><aside class="prompt" data-type="tip" data-title="" id="bad7ft_18"><p id="bad7ft_23"><span class="control" id="bad7ft_24">SPA vs SSR</span>: une SPA envoie un seul fichier HTML puis charge tout via JavaScript c&ocirc;t&eacute; client. Le routage est g&eacute;r&eacute; par React Router dans le navigateur. Nginx doit renvoyer <code class="code" id="bad7ft_25">index.html</code> pour toutes les routes qui ne correspondent pas &agrave; un fichier statique.</p></aside><p id="bad7ft_19">Dans ce lab, vous allez :</p><ol class="list _decimal" id="bad7ft_20" type="1"><li class="list__item" id="bad7ft_26"><p id="bad7ft_31">Analyser les sp&eacute;cificit&eacute;s du build Vite</p></li><li class="list__item" id="bad7ft_27"><p id="bad7ft_32">G&eacute;rer les variables d'environnement (build-time vs runtime)</p></li><li class="list__item" id="bad7ft_28"><p id="bad7ft_33">Cr&eacute;er un Dockerfile multi-stage optimis&eacute;</p></li><li class="list__item" id="bad7ft_29"><p id="bad7ft_34">Configurer Nginx pour servir une SPA</p></li><li class="list__item" id="bad7ft_30"><p id="bad7ft_35">Builder et tester l'image</p></li></ol></section><section class="chapter"><h2 id="partie-1-analyse-de-l-application-5-min" data-toc="partie-1-analyse-de-l-application-5-min">Partie 1 &mdash; Analyse de l'application (5 min)</h2><section class="chapter"><h3 id="1-1-comprendre-le-build-vite" data-toc="1-1-comprendre-le-build-vite">1.1 Comprendre le build Vite</h3><p id="bad7ft_38"><span class="control" id="bad7ft_44">&Agrave; faire</span>: ouvrez un shell dans le conteneur frontend et explorez le processus de build.</p><div class="code-block" data-lang="bash">
+docker compose exec front sh
+</div><ol class="list _decimal" id="bad7ft_40" type="1"><li class="list__item" id="bad7ft_45"><p id="bad7ft_46">Lancez un build de production et observez la sortie :</p></li></ol><div class="code-block" data-lang="bash">
+npm run build
+</div><ol class="list _decimal" id="bad7ft_42" type="1" start="2"><li class="list__item" id="bad7ft_47"><p id="bad7ft_49">Explorez le dossier g&eacute;n&eacute;r&eacute; (<code class="code" id="bad7ft_50">dist/</code>). Listez les fichiers et notez leur structure.</p></li><li class="list__item" id="bad7ft_48"><p id="bad7ft_51">R&eacute;pondez aux questions :</p><ul class="list _bullet" id="bad7ft_52"><li class="list__item" id="bad7ft_53"><p id="bad7ft_56">Quel est le point d'entr&eacute;e HTML ?</p></li><li class="list__item" id="bad7ft_54"><p id="bad7ft_57">Comment sont nomm&eacute;s les fichiers JS et CSS ? (indice : ils contiennent un hash)</p></li><li class="list__item" id="bad7ft_55"><p id="bad7ft_58">Le dossier <code class="code" id="bad7ft_59">dist/</code> est-il autonome ? A-t-il besoin de Node.js pour &ecirc;tre servi ?</p></li></ul></li></ol><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-1-1" data-toc="correction-1-1">Correction 1.1</h4></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+$ npm run build
+vite v6.x.x building for production...
+✓ 42 modules transformed.
+dist/index.html                  0.46 kB │ gzip:  0.30 kB
+dist/assets/index-a1b2c3d4.css  12.34 kB │ gzip:  3.21 kB
+dist/assets/index-e5f6g7h8.js  187.65 kB │ gzip: 61.23 kB
+✓ built in 3.21s
+</div><div class="code-block" data-lang="bash">
+$ ls dist/
+assets/     index.html
+$ ls dist/assets/
+index-a1b2c3d4.css   index-e5f6g7h8.js
+</div><p id="bad7ft_62">R&eacute;ponses :</p><ul class="list _bullet" id="bad7ft_63"><li class="list__item" id="bad7ft_64"><p id="bad7ft_67"><span class="control" id="bad7ft_68">Point d'entr&eacute;e</span>: <code class="code" id="bad7ft_69">dist/index.html</code> &mdash; contient les balises <code class="code" id="bad7ft_70">&lt;script&gt;</code> et <code class="code" id="bad7ft_71">&lt;link&gt;</code> vers les assets.</p></li><li class="list__item" id="bad7ft_65"><p id="bad7ft_72"><span class="control" id="bad7ft_73">Nommage</span>: les fichiers contiennent un <span class="control" id="bad7ft_74">hash de contenu</span> (ex: <code class="code" id="bad7ft_75">index-a1b2c3d4.css</code>). Cela permet le cache agressif : quand le contenu change, le nom change aussi.</p></li><li class="list__item" id="bad7ft_66"><p id="bad7ft_76"><span class="control" id="bad7ft_77">Autonome</span>: oui, <code class="code" id="bad7ft_78">dist/</code> ne contient que des fichiers statiques. Seul un serveur HTTP est n&eacute;cessaire &mdash; pas de Node.js en production.</p></li></ul></div></div></section></section><section class="chapter"><h3 id="1-2-comprendre-les-variables-d-environnement-vite" data-toc="1-2-comprendre-les-variables-d-environnement-vite">1.2 Comprendre les variables d'environnement Vite</h3><p id="bad7ft_79">C'est le pi&egrave;ge principal de la dockerisation d'une SPA : les variables d'environnement sont inject&eacute;es <span class="control" id="bad7ft_83">au moment du build</span>, pas au runtime.</p><p id="bad7ft_80"><span class="control" id="bad7ft_84">&Agrave; faire</span>: examinez le fichier <code class="code" id="bad7ft_85">front/.env</code> et le code dans <code class="code" id="bad7ft_86">src/api/client.js</code>.</p><ol class="list _decimal" id="bad7ft_81" type="1"><li class="list__item" id="bad7ft_87"><p id="bad7ft_90">Quelle variable d'environnement est utilis&eacute;e par le frontend ?</p></li><li class="list__item" id="bad7ft_88"><p id="bad7ft_91">Comment Vite la rend-elle accessible dans le code ? (quel pr&eacute;fixe, quel objet JavaScript)</p></li><li class="list__item" id="bad7ft_89"><p id="bad7ft_92">&Agrave; quel moment cette variable est-elle remplac&eacute;e par sa valeur : au build ou au runtime ?</p></li></ol><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-1-2" data-toc="correction-1-2">Correction 1.2</h4></div><div class="collapse__content"><ol class="list _decimal" id="bad7ft_93" type="1"><li class="list__item" id="bad7ft_95"><p id="bad7ft_98"><span class="control" id="bad7ft_99">Variable</span>: <code class="code" id="bad7ft_100">VITE_API_URL</code> (d&eacute;finie dans <code class="code" id="bad7ft_101">front/.env</code> avec la valeur <code class="code" id="bad7ft_102">http://localhost:8080</code>).</p></li><li class="list__item" id="bad7ft_96"><p id="bad7ft_103"><span class="control" id="bad7ft_104">Acc&egrave;s dans le code</span>: <code class="code" id="bad7ft_105">import.meta.env.VITE_API_URL</code>. Vite expose toutes les variables pr&eacute;fix&eacute;es par <code class="code" id="bad7ft_106">VITE_</code> dans l'objet <code class="code" id="bad7ft_107">import.meta.env</code>.</p></li><li class="list__item" id="bad7ft_97"><p id="bad7ft_108"><span class="control" id="bad7ft_109">Moment d'injection</span>: au <span class="control" id="bad7ft_110">build</span> uniquement. Lors de <code class="code" id="bad7ft_111">npm run build</code>, Vite remplace litt&eacute;ralement <code class="code" id="bad7ft_112">import.meta.env.VITE_API_URL</code> par la valeur dans le fichier JS compil&eacute;. Apr&egrave;s le build, la valeur est fig&eacute;e dans le JavaScript &mdash; impossible de la changer via une variable d'environnement Docker.</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="bad7ft_94"><p id="bad7ft_113"><span class="control" id="bad7ft_114">Cons&eacute;quence</span>: en production, l'API sera servie par le m&ecirc;me domaine que le frontend (derri&egrave;re un reverse proxy). On peut donc utiliser une URL relative (<code class="code" id="bad7ft_115">&quot;&quot;</code> ou <code class="code" id="bad7ft_116">/api</code>) comme valeur de <code class="code" id="bad7ft_117">VITE_API_URL</code>, ce qui &eacute;vite le probl&egrave;me de variable fig&eacute;e.</p></aside></div></div></section></section></section><section class="chapter"><h2 id="partie-2-gestion-des-variables-d-environnement-10-min" data-toc="partie-2-gestion-des-variables-d-environnement-10-min">Partie 2 &mdash; Gestion des variables d'environnement (10 min)</h2><section class="chapter"><h3 id="2-1-strat-gie-de-configuration-runtime" data-toc="2-1-strat-gie-de-configuration-runtime">2.1 Strat&eacute;gie de configuration runtime</h3><p id="bad7ft_119">Le probl&egrave;me des SPA est que les variables sont fig&eacute;es au build. En production, on veut pouvoir changer l'URL de l'API sans rebuilder l'image Docker (par exemple, pour d&eacute;ployer la m&ecirc;me image en staging et en production).</p><p id="bad7ft_120">Il existe trois strat&eacute;gies. Vous allez impl&eacute;menter la plus robuste.</p><div class="table-wrapper"><table class="wide" id="bad7ft_121"><thead><tr class="ijRowHead" id="bad7ft_132"><th id="bad7ft_136"><p>Strat&eacute;gie</p></th><th id="bad7ft_137"><p>Principe</p></th><th id="bad7ft_138"><p>Avantage</p></th><th id="bad7ft_139"><p>Inconv&eacute;nient</p></th></tr></thead><tbody><tr id="bad7ft_133"><td id="bad7ft_140"><p><span class="control" id="bad7ft_144">URL relative</span></p></td><td id="bad7ft_141"><p>L'API est sur le m&ecirc;me domaine</p></td><td id="bad7ft_142"><p>Simple, pas de variable</p></td><td id="bad7ft_143"><p>Impose un reverse proxy devant</p></td></tr><tr id="bad7ft_134"><td id="bad7ft_145"><p><span class="control" id="bad7ft_149">Build-time ARG</span></p></td><td id="bad7ft_146"><p><code class="code" id="bad7ft_150">docker build --build-arg VITE_API_URL=...</code></p></td><td id="bad7ft_147"><p>Simple</p></td><td id="bad7ft_148"><p>Rebuild pour chaque environnement</p></td></tr><tr id="bad7ft_135"><td id="bad7ft_151"><p><span class="control" id="bad7ft_155">Script d'injection runtime</span></p></td><td id="bad7ft_152"><p>Un script remplace un placeholder dans le HTML au d&eacute;marrage du conteneur</p></td><td id="bad7ft_153"><p>1 image pour N environnements</p></td><td id="bad7ft_154"><p>Un peu plus complexe</p></td></tr></tbody></table></div><p id="bad7ft_122"><span class="control" id="bad7ft_156">&Agrave; faire</span>: impl&eacute;mentez la strat&eacute;gie <span class="control" id="bad7ft_157">script d'injection runtime</span>.</p><p id="bad7ft_123"><span class="control" id="bad7ft_158">&Eacute;tape 1</span> &mdash; Modifiez <code class="code" id="bad7ft_159">front/index.html</code> pour ajouter un script de configuration <span class="control" id="bad7ft_160">avant</span> le script React :</p><div class="code-block" data-lang="markup">
+
+&lt;script src=&quot;/config.js&quot;&gt;&lt;/script&gt;
+</div><p id="bad7ft_125">Ce fichier sera g&eacute;n&eacute;r&eacute; dynamiquement au d&eacute;marrage du conteneur.</p><p id="bad7ft_126"><span class="control" id="bad7ft_161">&Eacute;tape 2</span> &mdash; Modifiez <code class="code" id="bad7ft_162">front/src/api/client.js</code> pour lire l'URL de l'API depuis <code class="code" id="bad7ft_163">window.__CONFIG__</code> en priorit&eacute;, puis depuis <code class="code" id="bad7ft_164">import.meta.env.VITE_API_URL</code> en fallback.</p><aside class="prompt" data-type="tip" data-title="" id="bad7ft_127"><p id="bad7ft_165">Le fichier <code class="code" id="bad7ft_167">config.js</code> g&eacute;n&eacute;r&eacute; contiendra :</p><div class="code-block" data-lang="javascript">
+window.__CONFIG__ = { API_URL: &quot;https://api.production.com&quot; };
+</div></aside><p id="bad7ft_128"><span class="control" id="bad7ft_168">&Eacute;tape 3</span> &mdash; Cr&eacute;ez un script shell <code class="code" id="bad7ft_169">docker/front/docker-entrypoint.sh</code> qui :</p><ol class="list _decimal" id="bad7ft_129" type="1"><li class="list__item" id="bad7ft_170"><p id="bad7ft_172">G&eacute;n&egrave;re <code class="code" id="bad7ft_173">/usr/share/nginx/html/config.js</code> avec la variable d'environnement <code class="code" id="bad7ft_174">API_URL</code></p></li><li class="list__item" id="bad7ft_171"><p id="bad7ft_175">Puis d&eacute;marre Nginx avec <code class="code" id="bad7ft_176">exec nginx -g 'daemon off;'</code></p></li></ol><aside class="prompt" data-type="tip" data-title="" id="bad7ft_130"><p id="bad7ft_177">En shell, pour &eacute;crire le fichier :</p><div class="code-block" data-lang="bash">
+cat &lt;&lt;EOF &gt; /usr/share/nginx/html/config.js
+window.__CONFIG__ = { API_URL: &quot;${API_URL:-}&quot; };
+EOF
+</div></aside><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-2-1" data-toc="correction-2-1">Correction 2.1</h4></div><div class="collapse__content"><p id="bad7ft_179"><span class="control" id="bad7ft_189"><code class="code" id="bad7ft_190">front/index.html</code></span> &mdash; ajout du script de configuration :</p><div class="code-block" data-lang="markup">
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;fr&quot;&gt;
+&lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot;/&gt;
+    &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;/&gt;
+    &lt;title&gt;Yapuka&lt;/title&gt;
+    &lt;!-- Configuration runtime injectée au démarrage du conteneur --&gt;
+    &lt;script src=&quot;/config.js&quot;&gt;&lt;/script&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;root&quot;&gt;&lt;/div&gt;
+&lt;script type=&quot;module&quot; src=&quot;/src/main.jsx&quot;&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</div><p id="bad7ft_181"><span class="control" id="bad7ft_191"><code class="code" id="bad7ft_192">front/src/api/client.js</code></span> &mdash; modification de la base URL :</p><div class="code-block" data-lang="javascript">
+// =============================================================================
+// URL de base de l'API
+// =============================================================================
+// Priorité :
+//   1. window.__CONFIG__.API_URL (injecté au runtime par Docker)
+//   2. import.meta.env.VITE_API_URL (injecté au build par Vite)
+//   3. '' (URL relative — même domaine, via reverse proxy)
+// =============================================================================
+const API_BASE_URL = window.__CONFIG__?.API_URL
+    || import.meta.env.VITE_API_URL
+    || '';
+</div><p id="bad7ft_183">Puis dans la fonction <code class="code" id="bad7ft_193">apiRequest</code>, remplacez l'ancienne r&eacute;f&eacute;rence par <code class="code" id="bad7ft_194">API_BASE_URL</code>:</p><div class="code-block" data-lang="javascript">
+async function apiRequest(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+    // ...
+}
+</div><p id="bad7ft_185"><span class="control" id="bad7ft_195"><code class="code" id="bad7ft_196">docker/front/docker-entrypoint.sh</code></span>:</p><div class="code-block" data-lang="bash">
+#!/bin/sh
+# =============================================================================
+# Entrypoint Docker — Injection des variables d'environnement runtime
+# =============================================================================
+# Génère /usr/share/nginx/html/config.js avec les variables d'environnement
+# passées au conteneur, puis démarre Nginx.
+# =============================================================================
+
+set -e
+
+# Générer le fichier de configuration runtime
+cat &lt;&lt;EOF &gt; /usr/share/nginx/html/config.js
+window.__CONFIG__ = {
+  API_URL: &quot;${API_URL:-}&quot;
+};
+EOF
+
+echo &quot;Configuration runtime générée :&quot;
+cat /usr/share/nginx/html/config.js
+
+# Démarrer Nginx au premier plan
+exec nginx -g 'daemon off;'
+</div><p id="bad7ft_187">N'oubliez pas de le rendre ex&eacute;cutable :</p><div class="code-block" data-lang="bash">
+chmod +x docker/front/docker-entrypoint.sh
+</div></div></div></section></section></section><section class="chapter"><h2 id="partie-3-dockerfile-multi-stage-15-min" data-toc="partie-3-dockerfile-multi-stage-15-min">Partie 3 &mdash; Dockerfile multi-stage (15 min)</h2><section class="chapter"><h3 id="3-1-cr-er-le-dockerignore" data-toc="3-1-cr-er-le-dockerignore">3.1 Cr&eacute;er le .dockerignore</h3><p id="bad7ft_201"><span class="control" id="bad7ft_204">&Agrave; faire</span>: cr&eacute;ez un fichier <code class="code" id="bad7ft_205">front/.dockerignore</code> qui exclut les fichiers inutiles au build.</p><p id="bad7ft_202">Excluez : <code class="code" id="bad7ft_206">node_modules/</code>, <code class="code" id="bad7ft_207">dist/</code>, les fichiers Git/IDE, les fichiers Docker, les configurations Cypress, et les fichiers <code class="code" id="bad7ft_208">.env.local</code>.</p><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-3-1" data-toc="correction-3-1">Correction 3.1</h4></div><div class="collapse__content"><div class="code-block" data-lang="dockerfile">
+# front/.dockerignore
+
+# Dépendances (installées dans le build)
+node_modules/
+
+# Build précédent (recréé dans le build)
+dist/
+
+# Tests E2E
+cypress/
+cypress.config.js
+
+# Git et IDE
+.git/
+.gitignore
+.idea/
+.vscode/
+
+# Docker (éviter la récursion)
+Dockerfile*
+
+# Environnement local
+.env.local
+</div></div></div></section></section><section class="chapter"><h3 id="3-2-stage-1-installation-des-d-pendances" data-toc="3-2-stage-1-installation-des-d-pendances">3.2 Stage 1 : installation des d&eacute;pendances</h3><p id="bad7ft_210"><span class="control" id="bad7ft_215">&Agrave; faire</span>: cr&eacute;ez un fichier <code class="code" id="bad7ft_216">front/Dockerfile.prod</code> avec le premier stage.</p><p id="bad7ft_211"><span class="control" id="bad7ft_217">Consignes</span>:</p><ul class="list _bullet" id="bad7ft_212"><li class="list__item" id="bad7ft_218"><p id="bad7ft_223">Partez de <code class="code" id="bad7ft_224">node:22-alpine</code></p></li><li class="list__item" id="bad7ft_219"><p id="bad7ft_225">Nommez ce stage <code class="code" id="bad7ft_226">deps</code></p></li><li class="list__item" id="bad7ft_220"><p id="bad7ft_227">D&eacute;finissez le workdir <code class="code" id="bad7ft_228">/app</code></p></li><li class="list__item" id="bad7ft_221"><p id="bad7ft_229">Copiez <span class="control" id="bad7ft_230">uniquement</span> <code class="code" id="bad7ft_231">package.json</code> et <code class="code" id="bad7ft_232">package-lock.json</code></p></li><li class="list__item" id="bad7ft_222"><p id="bad7ft_233">Lancez <code class="code" id="bad7ft_234">npm ci</code> (installation propre, plus rapide que <code class="code" id="bad7ft_235">npm install</code>, adapt&eacute;e au CI/CD)</p></li></ul><aside class="prompt" data-type="tip" data-title="" id="bad7ft_213"><p id="bad7ft_236"><span class="control" id="bad7ft_237"><code class="code" id="bad7ft_241">npm ci</code> vs <code class="code" id="bad7ft_242">npm install</code></span>: <code class="code" id="bad7ft_238">npm ci</code> supprime <code class="code" id="bad7ft_239">node_modules/</code> et installe exactement les versions du <code class="code" id="bad7ft_240">package-lock.json</code>. C'est plus rapide et reproductible &mdash; id&eacute;al pour les builds Docker.</p></aside><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-3-2" data-toc="correction-3-2">Correction 3.2</h4></div><div class="collapse__content"><div class="code-block" data-lang="dockerfile">
+# =============================================================================
+# Stage 1 : Deps — Installation des dépendances Node
+# =============================================================================
+FROM node:22-alpine AS deps
+
+WORKDIR /app
+
+# Copier uniquement les fichiers de dépendances (optimisation cache Docker)
+COPY package.json package-lock.json ./
+
+# Installation propre et reproductible
+RUN npm ci
+</div></div></div></section></section><section class="chapter"><h3 id="3-3-stage-2-build-de-production" data-toc="3-3-stage-2-build-de-production">3.3 Stage 2 : build de production</h3><p id="bad7ft_244">Le deuxi&egrave;me stage compile l'application React en fichiers statiques. C'est ici que les variables <code class="code" id="bad7ft_250">VITE_*</code> sont inject&eacute;es.</p><p id="bad7ft_245"><span class="control" id="bad7ft_251">&Agrave; faire</span>: ajoutez le stage de build.</p><p id="bad7ft_246"><span class="control" id="bad7ft_252">Consignes</span>:</p><ul class="list _bullet" id="bad7ft_247"><li class="list__item" id="bad7ft_253"><p id="bad7ft_259">Partez de <code class="code" id="bad7ft_260">node:22-alpine</code>, nommez-le <code class="code" id="bad7ft_261">builder</code></p></li><li class="list__item" id="bad7ft_254"><p id="bad7ft_262">Copiez <code class="code" id="bad7ft_263">node_modules/</code> depuis le stage <code class="code" id="bad7ft_264">deps</code></p></li><li class="list__item" id="bad7ft_255"><p id="bad7ft_265">Copiez tout le code source</p></li><li class="list__item" id="bad7ft_256"><p id="bad7ft_266">D&eacute;finissez un <code class="code" id="bad7ft_267">ARG VITE_API_URL</code> avec une valeur par d&eacute;faut vide (URL relative)</p></li><li class="list__item" id="bad7ft_257"><p id="bad7ft_268">Convertissez l'ARG en ENV pour que Vite y acc&egrave;de</p></li><li class="list__item" id="bad7ft_258"><p id="bad7ft_269">Lancez <code class="code" id="bad7ft_270">npm run build</code></p></li></ul><aside class="prompt" data-type="tip" data-title="" id="bad7ft_248"><p id="bad7ft_271"><span class="control" id="bad7ft_273">ARG vs ENV dans Docker</span>:</p><ul class="list _bullet" id="bad7ft_272"><li class="list__item" id="bad7ft_274"><p id="bad7ft_277"><code class="code" id="bad7ft_278">ARG</code> est disponible uniquement pendant le build (<code class="code" id="bad7ft_279">docker build --build-arg ...</code>)</p></li><li class="list__item" id="bad7ft_275"><p id="bad7ft_280"><code class="code" id="bad7ft_281">ENV</code> est disponible au build ET au runtime</p></li><li class="list__item" id="bad7ft_276"><p id="bad7ft_282">Il faut &eacute;crire <code class="code" id="bad7ft_283">ARG VITE_API_URL</code> puis <code class="code" id="bad7ft_284">ENV VITE_API_URL=$VITE_API_URL</code> pour que Vite puisse lire la variable</p></li></ul></aside><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-3-3" data-toc="correction-3-3">Correction 3.3</h4></div><div class="collapse__content"><div class="code-block" data-lang="dockerfile">
+# =============================================================================
+# Stage 2 : Builder — Compilation des assets de production
+# =============================================================================
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+# Copier les node_modules depuis le stage deps
+COPY --from=deps /app/node_modules ./node_modules
+
+# Copier le code source
+COPY . .
+
+# Variable d'environnement Vite (injectée au build)
+# Par défaut vide = URL relative (même domaine via reverse proxy)
+ARG VITE_API_URL=&quot;&quot;
+ENV VITE_API_URL=$VITE_API_URL
+
+# Build de production
+RUN npm run build
+</div></div></div></section></section><section class="chapter"><h3 id="3-4-stage-3-image-nginx-de-production" data-toc="3-4-stage-3-image-nginx-de-production">3.4 Stage 3 : image Nginx de production</h3><p id="bad7ft_286">Le stage final ne contient que Nginx et les fichiers statiques compil&eacute;s. Pas de Node.js, pas de <code class="code" id="bad7ft_292">node_modules/</code> &mdash; l'image est extr&ecirc;mement l&eacute;g&egrave;re.</p><p id="bad7ft_287"><span class="control" id="bad7ft_293">&Agrave; faire</span>: ajoutez le stage de production.</p><p id="bad7ft_288"><span class="control" id="bad7ft_294">Consignes</span>:</p><ol class="list _decimal" id="bad7ft_289" type="1"><li class="list__item" id="bad7ft_295"><p id="bad7ft_302">Partez de <code class="code" id="bad7ft_303">nginx:alpine</code>, nommez-le <code class="code" id="bad7ft_304">production</code></p></li><li class="list__item" id="bad7ft_296"><p id="bad7ft_305">Supprimez la configuration Nginx par d&eacute;faut</p></li><li class="list__item" id="bad7ft_297"><p id="bad7ft_306">Copiez votre configuration Nginx personnalis&eacute;e (vous la cr&eacute;erez &agrave; l'&eacute;tape suivante)</p></li><li class="list__item" id="bad7ft_298"><p id="bad7ft_307">Copiez le dossier <code class="code" id="bad7ft_308">dist/</code> depuis le stage <code class="code" id="bad7ft_309">builder</code> vers <code class="code" id="bad7ft_310">/usr/share/nginx/html</code></p></li><li class="list__item" id="bad7ft_299"><p id="bad7ft_311">Copiez le script <code class="code" id="bad7ft_312">docker-entrypoint.sh</code> et rendez-le ex&eacute;cutable</p></li><li class="list__item" id="bad7ft_300"><p id="bad7ft_313">Exposez le port 80</p></li><li class="list__item" id="bad7ft_301"><p id="bad7ft_314">Utilisez <code class="code" id="bad7ft_315">ENTRYPOINT</code> pour lancer votre script au lieu du CMD par d&eacute;faut</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="bad7ft_290"><p id="bad7ft_316"><span class="control" id="bad7ft_318">ENTRYPOINT vs CMD</span>:</p><ul class="list _bullet" id="bad7ft_317"><li class="list__item" id="bad7ft_319"><p id="bad7ft_321"><code class="code" id="bad7ft_322">CMD</code> est la commande par d&eacute;faut, facilement rempla&ccedil;able</p></li><li class="list__item" id="bad7ft_320"><p id="bad7ft_323"><code class="code" id="bad7ft_324">ENTRYPOINT</code> est le point d'entr&eacute;e obligatoire &mdash; utile quand on a un script d'initialisation qui doit toujours s' ex&eacute;cuter avant le serveur</p></li></ul></aside><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-3-4" data-toc="correction-3-4">Correction 3.4</h4></div><div class="collapse__content"><div class="code-block" data-lang="dockerfile">
+# =============================================================================
+# Stage 3 : Production — Nginx servant les fichiers statiques
+# =============================================================================
+FROM nginx:alpine AS production
+
+# Supprimer la config par défaut
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Copier notre configuration Nginx
+COPY docker/nginx/front.conf /etc/nginx/conf.d/default.conf
+
+# Copier les fichiers statiques compilés
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copier le script d'injection des variables runtime
+COPY docker/front/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+EXPOSE 80
+
+ENTRYPOINT [&quot;/docker-entrypoint.sh&quot;]
+</div><p id="bad7ft_326"><span class="control" id="bad7ft_328">Dockerfile complet</span> (<code class="code" id="bad7ft_329">front/Dockerfile.prod</code>) :</p><div class="code-block" data-lang="dockerfile">
+# =============================================================================
+# Dockerfile de production — Yapuka Frontend
+# =============================================================================
+# Multi-stage build :
+#   1. deps    → npm ci (cache optimisé)
+#   2. builder → npm run build (compilation Vite)
+#   3. prod    → Nginx Alpine + fichiers statiques
+# =============================================================================
+
+# --- Stage 1 : Dépendances ---
+FROM node:22-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# --- Stage 2 : Build ---
+FROM node:22-alpine AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+ARG VITE_API_URL=&quot;&quot;
+ENV VITE_API_URL=$VITE_API_URL
+RUN npm run build
+
+# --- Stage 3 : Production ---
+FROM nginx:alpine AS production
+RUN rm /etc/nginx/conf.d/default.conf
+COPY docker/nginx/front.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY docker/front/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+EXPOSE 80
+ENTRYPOINT [&quot;/docker-entrypoint.sh&quot;]
+</div></div></div></section></section></section><section class="chapter"><h2 id="partie-4-configuration-nginx-pour-spa-5-min" data-toc="partie-4-configuration-nginx-pour-spa-5-min">Partie 4 &mdash; Configuration Nginx pour SPA (5 min)</h2><section class="chapter"><h3 id="4-1-cr-er-la-configuration-nginx" data-toc="4-1-cr-er-la-configuration-nginx">4.1 Cr&eacute;er la configuration Nginx</h3><p id="bad7ft_331">Une SPA a une particularit&eacute; : toutes les routes (ex: <code class="code" id="bad7ft_337">/login</code>, <code class="code" id="bad7ft_338">/register</code>) doivent renvoyer <code class="code" id="bad7ft_339">index.html</code>, car le routage est g&eacute;r&eacute; par React Router c&ocirc;t&eacute; client. Seuls les fichiers statiques r&eacute;els (JS, CSS, images) doivent &ecirc;tre servis directement.</p><p id="bad7ft_332"><span class="control" id="bad7ft_340">&Agrave; faire</span>: cr&eacute;ez le fichier <code class="code" id="bad7ft_341">docker/nginx/front.conf</code>.</p><p id="bad7ft_333"><span class="control" id="bad7ft_342">Consignes</span>:</p><ol class="list _decimal" id="bad7ft_334" type="1"><li class="list__item" id="bad7ft_343"><p id="bad7ft_350"><span class="control" id="bad7ft_351">Server block</span> sur le port 80</p></li><li class="list__item" id="bad7ft_344"><p id="bad7ft_352"><span class="control" id="bad7ft_353">Root</span> vers <code class="code" id="bad7ft_354">/usr/share/nginx/html</code></p></li><li class="list__item" id="bad7ft_345"><p id="bad7ft_355"><span class="control" id="bad7ft_356">Location /</span> avec <code class="code" id="bad7ft_357">try_files $uri $uri/ /index.html</code> &mdash; c'est la r&egrave;gle cl&eacute; pour une SPA</p></li><li class="list__item" id="bad7ft_346"><p id="bad7ft_358"><span class="control" id="bad7ft_359">Cache agressif</span> pour les assets avec hash (<code class="code" id="bad7ft_360">/assets/</code>) : <code class="code" id="bad7ft_361">expires 1y</code>, <code class="code" id="bad7ft_362">Cache-Control: public, immutable</code></p></li><li class="list__item" id="bad7ft_347"><p id="bad7ft_363"><span class="control" id="bad7ft_364">Pas de cache</span> pour <code class="code" id="bad7ft_365">index.html</code> et <code class="code" id="bad7ft_366">config.js</code> (ces fichiers changent &agrave; chaque d&eacute;ploiement)</p></li><li class="list__item" id="bad7ft_348"><p id="bad7ft_367"><span class="control" id="bad7ft_368">Headers de s&eacute;curit&eacute;</span>: <code class="code" id="bad7ft_369">X-Content-Type-Options</code>, <code class="code" id="bad7ft_370">X-Frame-Options</code>, <code class="code" id="bad7ft_371">X-XSS-Protection</code></p></li><li class="list__item" id="bad7ft_349"><p id="bad7ft_372"><span class="control" id="bad7ft_373">Compression gzip</span> pour JS, CSS, JSON, HTML</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="bad7ft_335"><p id="bad7ft_374"><span class="control" id="bad7ft_375">Pourquoi cacher les assets mais pas <code class="code" id="bad7ft_379">index.html</code>?</span> Les fichiers dans <code class="code" id="bad7ft_376">assets/</code> ont un hash dans leur nom (<code class="code" id="bad7ft_377">index-a1b2c3.js</code>). Si le contenu change, le nom change &rarr; on peut cacher ind&eacute;finiment. <code class="code" id="bad7ft_378">index.html</code> r&eacute;f&eacute;rence ces fichiers par nom &rarr; il doit toujours &ecirc;tre frais pour pointer vers les derni&egrave;res versions.</p></aside><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-4-1" data-toc="correction-4-1">Correction 4.1</h4></div><div class="collapse__content"><div class="code-block" data-lang="nginx">
+# docker/nginx/front.conf
+# =============================================================================
+# Configuration Nginx de production pour le frontend React (SPA)
+# =============================================================================
+
+server {
+    listen 80;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # --- Compression ---
+    gzip on;
+    gzip_types text/html text/css application/javascript application/json;
+    gzip_min_length 256;
+
+    # --- Headers de sécurité ---
+    add_header X-Content-Type-Options &quot;nosniff&quot; always;
+    add_header X-Frame-Options &quot;DENY&quot; always;
+    add_header X-XSS-Protection &quot;1; mode=block&quot; always;
+    add_header Referrer-Policy &quot;strict-origin-when-cross-origin&quot; always;
+
+    # --- Assets avec hash : cache agressif (1 an) ---
+    location /assets/ {
+        expires 1y;
+        add_header Cache-Control &quot;public, immutable&quot;;
+        access_log off;
+    }
+
+    # --- index.html et config.js : jamais mis en cache ---
+    location = /index.html {
+        add_header Cache-Control &quot;no-cache, no-store, must-revalidate&quot;;
+        add_header Pragma &quot;no-cache&quot;;
+        add_header Expires &quot;0&quot;;
+    }
+
+    location = /config.js {
+        add_header Cache-Control &quot;no-cache, no-store, must-revalidate&quot;;
+        add_header Pragma &quot;no-cache&quot;;
+        add_header Expires &quot;0&quot;;
+    }
+
+    # --- SPA : toutes les routes renvoient index.html ---
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # --- Bloquer les fichiers sensibles ---
+    location ~ /\.(env|git|htaccess) {
+        deny all;
+        return 404;
+    }
+
+    # --- Logs ---
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+}
+</div><p id="bad7ft_381"><span class="control" id="bad7ft_383">Explication de <code class="code" id="bad7ft_384">try_files $uri $uri/ /index.html</code></span>:</p><ol class="list _decimal" id="bad7ft_382" type="1"><li class="list__item" id="bad7ft_385"><p id="bad7ft_388">Essaie de servir le fichier demand&eacute; (<code class="code" id="bad7ft_389">$uri</code>) &mdash; ex: <code class="code" id="bad7ft_390">/assets/index-abc.js</code> &rarr; sert le fichier JS</p></li><li class="list__item" id="bad7ft_386"><p id="bad7ft_391">Essaie le dossier (<code class="code" id="bad7ft_392">$uri/</code>) &mdash; ex: <code class="code" id="bad7ft_393">/assets/</code> &rarr; cherche un <code class="code" id="bad7ft_394">index.html</code> dans le dossier</p></li><li class="list__item" id="bad7ft_387"><p id="bad7ft_395">Sinon, renvoie <code class="code" id="bad7ft_396">/index.html</code> &mdash; ex: <code class="code" id="bad7ft_397">/login</code> &rarr; sert <code class="code" id="bad7ft_398">index.html</code>, React Router prend le relais</p></li></ol></div></div></section></section></section><section class="chapter"><h2 id="partie-5-build-et-validation-10-min" data-toc="partie-5-build-et-validation-10-min">Partie 5 &mdash; Build et validation (10 min)</h2><section class="chapter"><h3 id="5-1-builder-l-image" data-toc="5-1-builder-l-image">5.1 Builder l'image</h3><p id="bad7ft_403"><span class="control" id="bad7ft_412">&Agrave; faire</span>:</p><ol class="list _decimal" id="bad7ft_404" type="1"><li class="list__item" id="bad7ft_413"><p id="bad7ft_414">V&eacute;rifiez que tous les fichiers sont en place :</p></li></ol><div class="code-block" data-lang="bash">
+ls front/Dockerfile.prod
+ls docker/nginx/front.conf
+ls docker/front/docker-entrypoint.sh
+</div><ol class="list _decimal" id="bad7ft_406" type="1" start="2"><li class="list__item" id="bad7ft_415"><p id="bad7ft_416">Buildez l'image depuis la racine du projet (car le Dockerfile r&eacute;f&eacute;rence <code class="code" id="bad7ft_417">docker/</code> qui est en dehors de <code class="code" id="bad7ft_418">front/</code>) :</p></li></ol><div class="code-block" data-lang="bash">
+docker build -f front/Dockerfile.prod -t yapuka-front:prod front/
+</div><aside class="prompt" data-type="tip" data-title="" id="bad7ft_408"><p id="bad7ft_419">Si le build &eacute;choue parce que <code class="code" id="bad7ft_421">docker/nginx/front.conf</code> n'est pas trouv&eacute;, c'est que le contexte de build est <code class="code" id="bad7ft_422">front/</code> mais le fichier Nginx est dans <code class="code" id="bad7ft_423">docker/</code>. Deux solutions :</p><ul class="list _bullet" id="bad7ft_420"><li class="list__item" id="bad7ft_424"><p id="bad7ft_426"><span class="control" id="bad7ft_427">Solution A</span>: d&eacute;placer <code class="code" id="bad7ft_428">front.conf</code> dans <code class="code" id="bad7ft_429">front/docker/nginx/</code> et adapter le COPY</p></li><li class="list__item" id="bad7ft_425"><p id="bad7ft_430"><span class="control" id="bad7ft_431">Solution B</span>: builder depuis la racine avec <code class="code" id="bad7ft_432">-f front/Dockerfile.prod .</code> et adapter les COPY</p></li></ul></aside><ol class="list _decimal" id="bad7ft_409" type="1" start="3"><li class="list__item" id="bad7ft_433"><p id="bad7ft_434">V&eacute;rifiez la taille de l'image :</p></li></ol><div class="code-block" data-lang="bash">
+docker images yapuka-front:prod
+</div><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-5-1" data-toc="correction-5-1">Correction 5.1</h4></div><div class="collapse__content"><p id="bad7ft_435">Le probl&egrave;me de contexte est courant. La solution la plus propre est de copier les fichiers de configuration <span class="control" id="bad7ft_443">dans le dossier front</span> ou d'adapter les chemins.</p><p id="bad7ft_436"><span class="control" id="bad7ft_444">Solution recommand&eacute;e</span>: placer les fichiers de config dans <code class="code" id="bad7ft_445">front/</code> pour que le contexte de build soit autonome.</p><div class="code-block" data-lang="bash">
+mkdir -p front/docker/nginx
+cp docker/nginx/front.conf front/docker/nginx/front.conf
+mkdir -p front/docker/front
+cp docker/front/docker-entrypoint.sh front/docker/front/docker-entrypoint.sh
+</div><p id="bad7ft_438">Le Dockerfile avec les chemins relatifs au contexte <code class="code" id="bad7ft_446">front/</code>:</p><div class="code-block" data-lang="dockerfile">
+# Les COPY sont relatifs au contexte de build (front/)
+COPY docker/nginx/front.conf /etc/nginx/conf.d/default.conf
+COPY docker/front/docker-entrypoint.sh /docker-entrypoint.sh
+</div><p id="bad7ft_440">Build :</p><div class="code-block" data-lang="bash">
+$ docker build -f front/Dockerfile.prod -t yapuka-front:prod front/
+[+] Building 25.3s (14/14) FINISHED
+ =&gt; [deps] npm ci
+ =&gt; [builder] npm run build
+ =&gt; [production] COPY dist + config
+ =&gt; exporting to image
+
+$ docker images yapuka-front:prod
+REPOSITORY      TAG    SIZE
+yapuka-front    prod   ~45MB
+</div><p id="bad7ft_442">L'image fait environ <span class="control" id="bad7ft_447">40-50 MB</span> &mdash; c'est Nginx Alpine (~7 MB) + les fichiers statiques (~1 MB) + les couches de base. Comparez avec les 300+ MB d'une image Node.js qui inclut tout <code class="code" id="bad7ft_448">node_modules/</code>.</p></div></div></section></section><section class="chapter"><h3 id="5-2-tester-le-conteneur" data-toc="5-2-tester-le-conteneur">5.2 Tester le conteneur</h3><p id="bad7ft_449"><span class="control" id="bad7ft_459">&Agrave; faire</span>:</p><ol class="list _decimal" id="bad7ft_450" type="1"><li class="list__item" id="bad7ft_460"><p id="bad7ft_461">Lancez le conteneur en passant une URL d'API en variable d'environnement :</p></li></ol><div class="code-block" data-lang="bash">
+docker run --rm -d \
+  --name yapuka-front-test \
+  -p 3000:80 \
+  -e API_URL=&quot;http://localhost:8080&quot; \
+  yapuka-front:prod
+</div><ol class="list _decimal" id="bad7ft_452" type="1" start="2"><li class="list__item" id="bad7ft_462"><p id="bad7ft_463">V&eacute;rifiez les logs &mdash; vous devez voir la configuration runtime g&eacute;n&eacute;r&eacute;e :</p></li></ol><div class="code-block" data-lang="bash">
+docker logs yapuka-front-test
+</div><ol class="list _decimal" id="bad7ft_454" type="1" start="3"><li class="list__item" id="bad7ft_464"><p id="bad7ft_466">Testez dans le navigateur :</p><ul class="list _bullet" id="bad7ft_467"><li class="list__item" id="bad7ft_468"><p id="bad7ft_472">Ouvrez <code class="code" id="bad7ft_473">http://localhost:3000</code> &rarr; la page de login doit s'afficher</p></li><li class="list__item" id="bad7ft_469"><p id="bad7ft_474">Ouvrez <code class="code" id="bad7ft_475">http://localhost:3000/login</code> &rarr; m&ecirc;me page (SPA routing fonctionne)</p></li><li class="list__item" id="bad7ft_470"><p id="bad7ft_476">Ouvrez <code class="code" id="bad7ft_477">http://localhost:3000/nimportequoi</code> &rarr; redirig&eacute; vers login (route catch-all)</p></li><li class="list__item" id="bad7ft_471"><p id="bad7ft_478">Ouvrez <code class="code" id="bad7ft_479">http://localhost:3000/config.js</code> &rarr; doit afficher le contenu <code class="code" id="bad7ft_480">window.__CONFIG__</code></p></li></ul></li><li class="list__item" id="bad7ft_465"><p id="bad7ft_481">V&eacute;rifiez que le <code class="code" id="bad7ft_482">config.js</code> contient la bonne URL :</p></li></ol><div class="code-block" data-lang="bash">
+docker exec yapuka-front-test cat /usr/share/nginx/html/config.js
+</div><ol class="list _decimal" id="bad7ft_456" type="1" start="5"><li class="list__item" id="bad7ft_483"><p id="bad7ft_484">Nettoyez :</p></li></ol><div class="code-block" data-lang="bash">
+docker stop yapuka-front-test
+</div><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-5-2" data-toc="correction-5-2">Correction 5.2</h4></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+$ docker logs yapuka-front-test
+Configuration runtime générée :
+window.__CONFIG__ = {
+  API_URL: &quot;http://localhost:8080&quot;
+};
+</div><div class="code-block" data-lang="bash">
+$ curl -s http://localhost:3000/config.js
+window.__CONFIG__ = {
+  API_URL: &quot;http://localhost:8080&quot;
+};
+</div><div class="code-block" data-lang="bash">
+$ curl -s http://localhost:3000/ | head -5
+&lt;!DOCTYPE html&gt;
+&lt;html lang=&quot;fr&quot;&gt;
+  &lt;head&gt;
+    &lt;meta charset=&quot;UTF-8&quot; /&gt;
+    ...
+</div><div class="code-block" data-lang="bash">
+# Vérifier que le SPA routing fonctionne (toute route retourne index.html)
+$ curl -s -o /dev/null -w &quot;%{http_code}&quot; http://localhost:3000/login
+200
+$ curl -s -o /dev/null -w &quot;%{http_code}&quot; http://localhost:3000/nimportequoi
+200
+</div><p id="bad7ft_489"><span class="control" id="bad7ft_495">V&eacute;rification des headers de cache</span>:</p><div class="code-block" data-lang="bash">
+# Assets avec hash : cache 1 an
+$ curl -sI http://localhost:3000/assets/index-*.js | grep -i cache
+Cache-Control: public, immutable
+Expires: (date dans 1 an)
+
+# index.html : pas de cache
+$ curl -sI http://localhost:3000/ | grep -i cache
+Cache-Control: no-cache, no-store, must-revalidate
+</div><p id="bad7ft_491"><span class="control" id="bad7ft_496">Si la page est blanche</span>:</p><ul class="list _bullet" id="bad7ft_492"><li class="list__item" id="bad7ft_497"><p id="bad7ft_500">V&eacute;rifiez <code class="code" id="bad7ft_501">docker logs</code> pour des erreurs Nginx</p></li><li class="list__item" id="bad7ft_498"><p id="bad7ft_502">V&eacute;rifiez que <code class="code" id="bad7ft_503">dist/</code> contient bien les fichiers : <code class="code" id="bad7ft_504">docker exec yapuka-front-test ls /usr/share/nginx/html/</code></p></li><li class="list__item" id="bad7ft_499"><p id="bad7ft_505">V&eacute;rifiez que <code class="code" id="bad7ft_506">index.html</code> r&eacute;f&eacute;rence les bons fichiers dans <code class="code" id="bad7ft_507">assets/</code></p></li></ul><p id="bad7ft_493"><span class="control" id="bad7ft_508">Si <code class="code" id="bad7ft_509">config.js</code> retourne 404</span>:</p><ul class="list _bullet" id="bad7ft_494"><li class="list__item" id="bad7ft_510"><p id="bad7ft_511">Le script <code class="code" id="bad7ft_512">docker-entrypoint.sh</code> n'a pas &eacute;t&eacute; ex&eacute;cut&eacute;. V&eacute;rifiez que <code class="code" id="bad7ft_513">ENTRYPOINT</code> est bien d&eacute;fini dans le Dockerfile et que le script est ex&eacute;cutable (<code class="code" id="bad7ft_514">chmod +x</code>)</p></li></ul></div></div></section></section><section class="chapter"><h3 id="5-3-tester-avec-une-autre-url-d-api-sans-rebuild" data-toc="5-3-tester-avec-une-autre-url-d-api-sans-rebuild">5.3 Tester avec une autre URL d'API (sans rebuild)</h3><p id="bad7ft_515">C'est le test d&eacute;cisif de la strat&eacute;gie d'injection runtime : la m&ecirc;me image Docker fonctionne avec une URL d'API diff&eacute;rente.</p><p id="bad7ft_516"><span class="control" id="bad7ft_520">&Agrave; faire</span>:</p><div class="code-block" data-lang="bash">
+# Lancer avec une URL de staging
+docker run --rm -d \
+  --name yapuka-staging \
+  -p 3001:80 \
+  -e API_URL=&quot;https://api.staging.yapuka.dev&quot; \
+  yapuka-front:prod
+
+# Vérifier que config.js contient la nouvelle URL
+curl -s http://localhost:3001/config.js
+
+# Nettoyer
+docker stop yapuka-staging
+</div><aside class="prompt" data-type="tip" data-title="" id="bad7ft_518"><p id="bad7ft_521">Si <code class="code" id="bad7ft_522">config.js</code> affiche <code class="code" id="bad7ft_523">https://api.staging.yapuka.dev</code>, votre strat&eacute;gie d'injection runtime fonctionne : <span class="control" id="bad7ft_524">une seule image, N environnements</span>.</p></aside><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-5-3" data-toc="correction-5-3">Correction 5.3</h4></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+$ curl -s http://localhost:3001/config.js
+window.__CONFIG__ = {
+  API_URL: &quot;https://api.staging.yapuka.dev&quot;
+};
+</div><p id="bad7ft_526">C'est le principal avantage par rapport &agrave; un simple <code class="code" id="bad7ft_527">--build-arg</code>: vous buildez l'image <span class="control" id="bad7ft_528">une seule fois</span> dans le pipeline CI/CD, puis vous la d&eacute;ployez en staging, pr&eacute;-production et production en changeant uniquement la variable d'environnement.</p></div></div></section></section><section class="chapter"><h3 id="5-4-comparer-les-images-dev-vs-prod" data-toc="5-4-comparer-les-images-dev-vs-prod">5.4 Comparer les images dev vs prod</h3><p id="bad7ft_529"><span class="control" id="bad7ft_532">&Agrave; faire</span>: comparez les tailles des images.</p><div class="code-block" data-lang="bash">
+docker images | grep yapuka-front
+</div><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-5-4" data-toc="correction-5-4">Correction 5.4</h4></div><div class="collapse__content"><div class="code-block" data-lang="bash">
+$ docker images | grep yapuka-front
+yapuka-front   prod     ~45MB
+</div><p id="bad7ft_534">Comparaison avec l'image de dev qui utilise <code class="code" id="bad7ft_537">node:22-alpine</code> + tous les <code class="code" id="bad7ft_538">node_modules/</code> + Vite dev server :</p><div class="table-wrapper"><table class="wide" id="bad7ft_535"><thead><tr class="ijRowHead" id="bad7ft_539"><th id="bad7ft_542"><p>Image</p></th><th id="bad7ft_543"><p>Base</p></th><th id="bad7ft_544"><p>Contenu</p></th><th id="bad7ft_545"><p>Taille</p></th></tr></thead><tbody><tr id="bad7ft_540"><td id="bad7ft_546"><p>Dev</p></td><td id="bad7ft_547"><p><code class="code" id="bad7ft_550">node:22-alpine</code> (~180 MB)</p></td><td id="bad7ft_548"><p><code class="code" id="bad7ft_551">node_modules/</code> (~200 MB) + code source</p></td><td id="bad7ft_549"><p><span class="control" id="bad7ft_552">~400 MB</span></p></td></tr><tr id="bad7ft_541"><td id="bad7ft_553"><p>Prod</p></td><td id="bad7ft_554"><p><code class="code" id="bad7ft_557">nginx:alpine</code> (~7 MB)</p></td><td id="bad7ft_555"><p>Fichiers statiques (~1 MB)</p></td><td id="bad7ft_556"><p><span class="control" id="bad7ft_558">~45 MB</span></p></td></tr></tbody></table></div><p id="bad7ft_536">L'image de production est <span class="control" id="bad7ft_559">~9x plus petite</span>. Elle d&eacute;marre aussi instantan&eacute;ment (Nginx vs compilation Vite).</p></div></div></section></section></section><section class="chapter"><h2 id="crit-res-de-validation" data-toc="crit-res-de-validation">Crit&egrave;res de validation</h2><div class="table-wrapper"><table class="wide" id="bad7ft_560"><thead><tr class="ijRowHead" id="bad7ft_561"><th id="bad7ft_573"><p>#</p></th><th id="bad7ft_574"><p>Crit&egrave;re</p></th><th id="bad7ft_575"><p>Points</p></th></tr></thead><tbody><tr id="bad7ft_562"><td id="bad7ft_576"><p>1</p></td><td id="bad7ft_577"><p>Le <code class="code" id="bad7ft_579">.dockerignore</code> exclut <code class="code" id="bad7ft_580">node_modules/</code>, <code class="code" id="bad7ft_581">dist/</code>, <code class="code" id="bad7ft_582">cypress/</code>, et les fichiers de dev</p></td><td id="bad7ft_578"><p>/2</p></td></tr><tr id="bad7ft_563"><td id="bad7ft_583"><p>2</p></td><td id="bad7ft_584"><p>Le <code class="code" id="bad7ft_586">docker-entrypoint.sh</code> g&eacute;n&egrave;re <code class="code" id="bad7ft_587">config.js</code> &agrave; partir de la variable <code class="code" id="bad7ft_588">API_URL</code></p></td><td id="bad7ft_585"><p>/3</p></td></tr><tr id="bad7ft_564"><td id="bad7ft_589"><p>3</p></td><td id="bad7ft_590"><p>Le <code class="code" id="bad7ft_592">client.js</code> lit <code class="code" id="bad7ft_593">window.__CONFIG__.API_URL</code> en priorit&eacute;</p></td><td id="bad7ft_591"><p>/2</p></td></tr><tr id="bad7ft_565"><td id="bad7ft_594"><p>4</p></td><td id="bad7ft_595"><p>Le Dockerfile utilise un multi-stage build avec 3 stages (deps, builder, production)</p></td><td id="bad7ft_596"><p>/2</p></td></tr><tr id="bad7ft_566"><td id="bad7ft_597"><p>5</p></td><td id="bad7ft_598"><p>Le stage <code class="code" id="bad7ft_600">deps</code> utilise <code class="code" id="bad7ft_601">npm ci</code> et copie d'abord <code class="code" id="bad7ft_602">package.json</code> + <code class="code" id="bad7ft_603">package-lock.json</code></p></td><td id="bad7ft_599"><p>/2</p></td></tr><tr id="bad7ft_567"><td id="bad7ft_604"><p>6</p></td><td id="bad7ft_605"><p>Le stage <code class="code" id="bad7ft_607">production</code> utilise <code class="code" id="bad7ft_608">nginx:alpine</code> (pas <code class="code" id="bad7ft_609">node:alpine</code>)</p></td><td id="bad7ft_606"><p>/2</p></td></tr><tr id="bad7ft_568"><td id="bad7ft_610"><p>7</p></td><td id="bad7ft_611"><p>La config Nginx impl&eacute;mente <code class="code" id="bad7ft_613">try_files $uri $uri/ /index.html</code> pour le SPA routing</p></td><td id="bad7ft_612"><p>/2</p></td></tr><tr id="bad7ft_569"><td id="bad7ft_614"><p>8</p></td><td id="bad7ft_615"><p>Les assets ont un cache de 1 an, <code class="code" id="bad7ft_617">index.html</code> et <code class="code" id="bad7ft_618">config.js</code> n'ont pas de cache</p></td><td id="bad7ft_616"><p>/2</p></td></tr><tr id="bad7ft_570"><td id="bad7ft_619"><p>9</p></td><td id="bad7ft_620"><p><code class="code" id="bad7ft_622">docker build</code> r&eacute;ussit et le conteneur sert la page sur <code class="code" id="bad7ft_623">http://localhost:3000</code></p></td><td id="bad7ft_621"><p>/1</p></td></tr><tr id="bad7ft_571"><td id="bad7ft_624"><p>10</p></td><td id="bad7ft_625"><p>La m&ecirc;me image fonctionne avec deux URLs d'API diff&eacute;rentes (test 5.3)</p></td><td id="bad7ft_626"><p>/2</p></td></tr><tr id="bad7ft_572"><td id="bad7ft_627"></td><td id="bad7ft_628"><p><span class="control" id="bad7ft_630">Total</span></p></td><td id="bad7ft_629"><p><span class="control" id="bad7ft_631">/20</span></p></td></tr></tbody></table></div></section><section class="chapter"><h2 id="pour-aller-plus-loin" data-toc="pour-aller-plus-loin">Pour aller plus loin</h2><p id="bad7ft_632">Si vous avez termin&eacute; en avance :</p><ul class="list _bullet" id="bad7ft_633"><li class="list__item" id="bad7ft_634"><p id="bad7ft_638"><span class="control" id="bad7ft_639">Healthcheck</span>: ajoutez une instruction <code class="code" id="bad7ft_640">HEALTHCHECK</code> qui v&eacute;rifie que Nginx r&eacute;pond sur <code class="code" id="bad7ft_641">/</code> avec <code class="code" id="bad7ft_642">curl -f http://localhost/ || exit 1</code>. Pensez &agrave; installer <code class="code" id="bad7ft_643">curl</code> dans l'image Alpine.</p></li><li class="list__item" id="bad7ft_635"><p id="bad7ft_644"><span class="control" id="bad7ft_645">CSP (Content Security Policy)</span>: ajoutez un header <code class="code" id="bad7ft_646">Content-Security-Policy</code> dans la config Nginx pour restreindre les sources de scripts et de styles.</p></li><li class="list__item" id="bad7ft_636"><p id="bad7ft_647"><span class="control" id="bad7ft_648">User non-root</span>: Nginx Alpine tourne en root par d&eacute;faut. Configurez-le pour tourner en tant qu'utilisateur <code class="code" id="bad7ft_649">nginx</code> (modifiez <code class="code" id="bad7ft_650">nginx.conf</code> principal et les permissions des dossiers de cache/PID).</p></li><li class="list__item" id="bad7ft_637"><p id="bad7ft_651"><span class="control" id="bad7ft_652">Variables multiples</span>: &eacute;tendez le script d'injection pour supporter plusieurs variables (<code class="code" id="bad7ft_653">API_URL</code>, <code class="code" id="bad7ft_654">APP_TITLE</code>, <code class="code" id="bad7ft_655">FEATURE_FLAGS</code>&hellip;) avec une boucle qui lit toutes les variables pr&eacute;fix&eacute;es par <code class="code" id="bad7ft_656">FRONT_</code>.</p></li></ul></section><div class="last-modified">05 mars 2026</div><div data-feedback-placeholder="true"></div><div class="navigation-links _bottom"><a href="lab-4-intro.html" class="navigation-links__prev">4. Dockerisation production d'un frontend React</a><a href="lab-5-intro.html" class="navigation-links__next">5. Orchestration avec Docker Compose</a></div></article><div id="disqus_thread"></div></div></section></main></div><script src="https://resources.jetbrains.com/writerside/apidoc/6.25.3-b857/app.js"></script></body></html>

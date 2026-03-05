@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE instance-profile
+        SYSTEM "https://resources.jetbrains.com/writerside/1.0/product-profile.dtd">
+
+<instance-profile id="lsd"
+                 name="Lab Symfony devops"
+                 start-page="lab-01.md">
+
+    <toc-element topic="Lab-1-Introduction.md">
+        <toc-element topic="lab-01.md"/>
+    </toc-element>
+    <toc-element topic="Lab-2-intro.md">
+        <toc-element topic="lab-02.md"/>
+    </toc-element>
+    <toc-element topic="lab-3-Intro.md">
+        <toc-element topic="lab-03.md"/>
+    </toc-element>
+    <toc-element topic="lab-4-intro.md">
+        <toc-element topic="lab-04.md"/>
+    </toc-element>
+    <toc-element topic="lab-5-intro.md">
+        <toc-element topic="lab-05.md"/>
+    </toc-element>
+    <toc-element topic="lab-6-intro.md">
+        <toc-element topic="lab-06.md"/>
+    </toc-element>
+    <toc-element topic="lab-7-intro.md">
+        <toc-element topic="lab-07.md"/>
+    </toc-element>
+    <toc-element topic="lab-8-intro.md">
+        <toc-element topic="lab-08.md"/>
+    </toc-element>
+</instance-profile>

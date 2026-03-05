@@ -1,0 +1,254 @@
+<!DOCTYPE html SYSTEM "about:legacy-compat">
+<html lang="en-US" data-preset="contrast" data-primary-color="#307FFF"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="UTF-8"><meta name="robots" content="noindex"><meta name="built-on" content="2026-03-05T13:50:53.530287"><title>Lab 5 &mdash; Orchestration avec Docker Compose | Lab Symfony devops</title><script type="application/json" id="virtual-toc-data">[{"id":"objectifs-du-lab","level":0,"title":"Objectifs du lab","anchor":"#objectifs-du-lab"},{"id":"tape-1-comprendre-l-architecture-cible-5-min","level":0,"title":"Étape 1 — Comprendre l\u0027architecture cible (5 min)","anchor":"#tape-1-comprendre-l-architecture-cible-5-min"},{"id":"tape-2-cr-er-le-fichier-docker-compose-yml-10-min","level":0,"title":"Étape 2 — Créer le fichier docker-compose.yml (10 min)","anchor":"#tape-2-cr-er-le-fichier-docker-compose-yml-10-min"},{"id":"tape-3-configurer-le-reverse-proxy-nginx-8-min","level":0,"title":"Étape 3 — Configurer le Reverse Proxy Nginx (8 min)","anchor":"#tape-3-configurer-le-reverse-proxy-nginx-8-min"},{"id":"tape-4-lancer-et-valider-la-stack-7-min","level":0,"title":"Étape 4 — Lancer et valider la stack (7 min)","anchor":"#tape-4-lancer-et-valider-la-stack-7-min"},{"id":"r-capitulatif","level":0,"title":"Récapitulatif","anchor":"#r-capitulatif"}]</script><script type="application/json" id="topic-shortcuts"></script><link href="https://resources.jetbrains.com/writerside/apidoc/6.25.3-b857/app.css" rel="stylesheet"><meta name="msapplication-TileColor" content="#000000"><link rel="apple-touch-icon" sizes="180x180" href="https://jetbrains.com/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="https://jetbrains.com/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="https://jetbrains.com/favicon-16x16.png"><meta name="msapplication-TileImage" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-144x144.png"><meta name="msapplication-square70x70logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-70x70.png"><meta name="msapplication-square150x150logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-150x150.png"><meta name="msapplication-wide310x150logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-310x150.png"><meta name="msapplication-square310x310logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-310x310.png"><meta name="image" content=""><!-- Open Graph --><meta property="og:title" content="Lab 5 &mdash; Orchestration avec Docker Compose | Lab Symfony devops"><meta property="og:description" content=""><meta property="og:image" content=""><meta property="og:site_name" content="Lab Symfony devops Help"><meta property="og:type" content="website"><meta property="og:locale" content="en_US"><meta property="og:url" content="writerside-documentation/lab-05.html"><!-- End Open Graph --><!-- Twitter Card --><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content=""><meta name="twitter:title" content="Lab 5 &mdash; Orchestration avec Docker Compose | Lab Symfony devops"><meta name="twitter:description" content=""><meta name="twitter:creator" content=""><meta name="twitter:image:src" content=""><!-- End Twitter Card --><!-- Schema.org WebPage --><script type="application/ld+json">{
+    "@context": "http://schema.org",
+    "@type": "WebPage",
+    "@id": "writerside-documentation/lab-05.html#webpage",
+    "url": "writerside-documentation/lab-05.html",
+    "name": "Lab 5 &mdash; Orchestration avec Docker Compose | Lab Symfony devops",
+    "description": "",
+    "image": "",
+    "inLanguage":"en-US"
+}</script><!-- End Schema.org --><!-- Schema.org WebSite --><script type="application/ld+json">{
+    "@type": "WebSite",
+    "@id": "writerside-documentation/#website",
+    "url": "writerside-documentation/",
+    "name": "Lab Symfony devops Help"
+}</script><!-- End Schema.org --></head><body data-id="lab-05" data-main-title="Lab 5 — Orchestration avec Docker Compose" data-article-props="{&quot;seeAlsoStyle&quot;:&quot;links&quot;}" data-template="article" data-breadcrumbs="lab-5-intro.md|5. Orchestration avec Docker Compose"><div class="wrapper"><main class="panel _main"><header class="panel__header"><div class="container"><h3>Lab Symfony devops  Help</h3><div class="panel-trigger"></div></div></header><section class="panel__content"><div class="container"><article class="article" data-shortcut-switcher="inactive"><h1 data-toc="lab-05" id="lab-05.md">Lab 5 — Orchestration avec Docker Compose</h1><section class="chapter"><h2 id="objectifs-du-lab" data-toc="objectifs-du-lab">Objectifs du lab</h2><p id="badufc_9">&Agrave; la fin de ce lab, vous serez capable de :</p><ul class="list _bullet" id="badufc_10"><li class="list__item" id="badufc_14"><p id="badufc_18">Orchestrer plusieurs conteneurs avec Docker Compose</p></li><li class="list__item" id="badufc_15"><p id="badufc_19">Configurer les services PostgreSQL, Redis, PHP-FPM, Nginx et React</p></li><li class="list__item" id="badufc_16"><p id="badufc_20">G&eacute;rer les d&eacute;pendances, r&eacute;seaux et volumes entre services</p></li><li class="list__item" id="badufc_17"><p id="badufc_21">Valider le bon fonctionnement de l'ensemble de la stack</p></li></ul><p id="badufc_11"><span class="control" id="badufc_22">Pr&eacute;requis :</span></p><ul class="list _bullet" id="badufc_12"><li class="list__item" id="badufc_23"><p id="badufc_26">Les Dockerfiles du backend (<code class="code" id="badufc_27">api/Dockerfile</code>) et du frontend (<code class="code" id="badufc_28">front/Dockerfile</code>) sont d&eacute;j&agrave; cr&eacute;&eacute;s (labs pr&eacute;c&eacute;dents)</p></li><li class="list__item" id="badufc_24"><p id="badufc_29">Docker et Docker Compose sont install&eacute;s sur votre machine</p></li><li class="list__item" id="badufc_25"><p id="badufc_30">Vous &ecirc;tes &agrave; la racine du projet <code class="code" id="badufc_31">yapuka/</code></p></li></ul></section><section class="chapter"><h2 id="tape-1-comprendre-l-architecture-cible-5-min" data-toc="tape-1-comprendre-l-architecture-cible-5-min">&Eacute;tape 1 &mdash; Comprendre l'architecture cible (5 min)</h2><p id="badufc_32">Avant d'&eacute;crire la moindre ligne de configuration, prenons le temps de comprendre ce que nous allons construire.</p><section class="chapter"><h3 id="1-1-les-services-n-cessaires" data-toc="1-1-les-services-n-cessaires">1.1 Les services n&eacute;cessaires</h3><p id="badufc_36">Notre application Yapuka est compos&eacute;e de <span class="control" id="badufc_38">5 services</span> qui doivent communiquer entre eux :</p><div class="table-wrapper"><table class="wide" id="badufc_37"><thead><tr class="ijRowHead" id="badufc_39"><th id="badufc_45"><p>Service</p></th><th id="badufc_46"><p>R&ocirc;le</p></th><th id="badufc_47"><p>Image / Build</p></th><th id="badufc_48"><p>Port expos&eacute;</p></th></tr></thead><tbody><tr id="badufc_40"><td id="badufc_49"><p><span class="control" id="badufc_53">nginx</span></p></td><td id="badufc_50"><p>Reverse proxy, point d'entr&eacute;e unique</p></td><td id="badufc_51"><p><code class="code" id="badufc_54">nginx:alpine</code></p></td><td id="badufc_52"><p>8080 &rarr; 80</p></td></tr><tr id="badufc_41"><td id="badufc_55"><p><span class="control" id="badufc_59">php</span></p></td><td id="badufc_56"><p>Backend Symfony (PHP-FPM)</p></td><td id="badufc_57"><p>Build depuis <code class="code" id="badufc_60">api/</code></p></td><td id="badufc_58"><p>&mdash;</p></td></tr><tr id="badufc_42"><td id="badufc_61"><p><span class="control" id="badufc_65">front</span></p></td><td id="badufc_62"><p>Frontend React (serveur de dev Vite)</p></td><td id="badufc_63"><p>Build depuis <code class="code" id="badufc_66">front/</code></p></td><td id="badufc_64"><p>5173</p></td></tr><tr id="badufc_43"><td id="badufc_67"><p><span class="control" id="badufc_71">database</span></p></td><td id="badufc_68"><p>Base de donn&eacute;es PostgreSQL</p></td><td id="badufc_69"><p><code class="code" id="badufc_72">postgres:16-alpine</code></p></td><td id="badufc_70"><p>5432</p></td></tr><tr id="badufc_44"><td id="badufc_73"><p><span class="control" id="badufc_77">redis</span></p></td><td id="badufc_74"><p>Cache et pub/sub</p></td><td id="badufc_75"><p><code class="code" id="badufc_78">redis:7-alpine</code></p></td><td id="badufc_76"><p>6379</p></td></tr></tbody></table></div></section><section class="chapter"><h3 id="1-2-flux-des-requ-tes" data-toc="1-2-flux-des-requ-tes">1.2 Flux des requ&ecirc;tes</h3><div class="code-block" data-lang="none">
+Navigateur → :8080 → Nginx
+                       ├── /api/*  → PHP-FPM (:9000)
+                       │                ├── PostgreSQL (:5432)
+                       │                └── Redis (:6379)
+                       └── /*      → Vite (:5173)
+</div><aside class="prompt" data-type="tip" data-title="" id="badufc_80"><p id="badufc_81"><span class="control" id="badufc_82">Question pour r&eacute;fl&eacute;chir :</span> Pourquoi utiliser Nginx comme point d'entr&eacute;e plut&ocirc;t que d'acc&eacute;der directement aux services PHP et React ?</p></aside></section><section class="chapter"><h3 id="1-3-exercice-sch-ma-d-architecture" data-toc="1-3-exercice-sch-ma-d-architecture">1.3 Exercice &mdash; Sch&eacute;ma d'architecture</h3><p id="badufc_83">Sur papier ou dans un outil de diagramme, dessinez :</p><ol class="list _decimal" id="badufc_84" type="1"><li class="list__item" id="badufc_86"><p id="badufc_90">Les 5 services sous forme de bo&icirc;tes</p></li><li class="list__item" id="badufc_87"><p id="badufc_91">Les fl&egrave;ches de communication entre eux</p></li><li class="list__item" id="badufc_88"><p id="badufc_92">Les ports expos&eacute;s vers l'h&ocirc;te (votre machine)</p></li><li class="list__item" id="badufc_89"><p id="badufc_93">Les volumes persistants n&eacute;cessaires</p></li></ol><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-sch-ma-d-architecture" data-toc="correction-sch-ma-d-architecture">Correction sch&eacute;ma d'architecture</h4></div><div class="collapse__content"><p id="badufc_94">Les communications sont les suivantes :</p><ul class="list _bullet" id="badufc_95"><li class="list__item" id="badufc_101"><p id="badufc_105"><span class="control" id="badufc_106">Nginx</span> &rarr; <span class="control" id="badufc_107">PHP-FPM</span> (FastCGI, port 9000) pour les requ&ecirc;tes <code class="code" id="badufc_108">/api</code></p></li><li class="list__item" id="badufc_102"><p id="badufc_109"><span class="control" id="badufc_110">Nginx</span> &rarr; <span class="control" id="badufc_111">Front</span> (HTTP, port 5173) pour les requ&ecirc;tes <code class="code" id="badufc_112">/</code></p></li><li class="list__item" id="badufc_103"><p id="badufc_113"><span class="control" id="badufc_114">PHP-FPM</span> &rarr; <span class="control" id="badufc_115">PostgreSQL</span> (TCP, port 5432) pour les donn&eacute;es</p></li><li class="list__item" id="badufc_104"><p id="badufc_116"><span class="control" id="badufc_117">PHP-FPM</span> &rarr; <span class="control" id="badufc_118">Redis</span> (TCP, port 6379) pour le cache</p></li></ul><p id="badufc_96">Ports expos&eacute;s vers l'h&ocirc;te :</p><ul class="list _bullet" id="badufc_97"><li class="list__item" id="badufc_119"><p id="badufc_123"><code class="code" id="badufc_124">8080:80</code> (Nginx &mdash; point d'entr&eacute;e principal)</p></li><li class="list__item" id="badufc_120"><p id="badufc_125"><code class="code" id="badufc_126">5173:5173</code> (Vite &mdash; acc&egrave;s direct optionnel pour le dev)</p></li><li class="list__item" id="badufc_121"><p id="badufc_127"><code class="code" id="badufc_128">5432:5432</code> (PostgreSQL &mdash; acc&egrave;s direct pour les outils DB)</p></li><li class="list__item" id="badufc_122"><p id="badufc_129"><code class="code" id="badufc_130">6379:6379</code> (Redis &mdash; acc&egrave;s direct optionnel)</p></li></ul><p id="badufc_98">Volumes persistants :</p><ul class="list _bullet" id="badufc_99"><li class="list__item" id="badufc_131"><p id="badufc_133"><code class="code" id="badufc_134">db_data</code> &rarr; <code class="code" id="badufc_135">/var/lib/postgresql/data</code> (donn&eacute;es PostgreSQL)</p></li><li class="list__item" id="badufc_132"><p id="badufc_136"><code class="code" id="badufc_137">redis_data</code> &rarr; <code class="code" id="badufc_138">/data</code> (donn&eacute;es Redis)</p></li></ul></div></div></section></section></section><section class="chapter"><h2 id="tape-2-cr-er-le-fichier-docker-compose-yml-10-min" data-toc="tape-2-cr-er-le-fichier-docker-compose-yml-10-min">&Eacute;tape 2 &mdash; Cr&eacute;er le fichier docker-compose.yml (10 min)</h2><p id="badufc_139">Cr&eacute;ez un fichier <code class="code" id="badufc_146">docker-compose.yml</code> &agrave; la racine du projet. Nous allons le construire service par service.</p><section class="chapter"><h3 id="2-1-structure-de-base-et-service-postgresql" data-toc="2-1-structure-de-base-et-service-postgresql">2.1 Structure de base et service PostgreSQL</h3><p id="badufc_147">Commencez par la structure minimale avec le service de base de donn&eacute;es.</p><p id="badufc_148"><span class="control" id="badufc_152">&Agrave; vous de jouer :</span> cr&eacute;ez le fichier <code class="code" id="badufc_153">docker-compose.yml</code> avec :</p><ul class="list _bullet" id="badufc_149"><li class="list__item" id="badufc_154"><p id="badufc_159">Un service <code class="code" id="badufc_160">database</code> utilisant l'image <code class="code" id="badufc_161">postgres:16-alpine</code></p></li><li class="list__item" id="badufc_155"><p id="badufc_162">Les variables d'environnement : nom de la base <code class="code" id="badufc_163">yapuka</code>, utilisateur <code class="code" id="badufc_164">yapuka</code>, mot de passe <code class="code" id="badufc_165">yapuka</code></p></li><li class="list__item" id="badufc_156"><p id="badufc_166">Un volume nomm&eacute; <code class="code" id="badufc_167">db_data</code> mont&eacute; sur <code class="code" id="badufc_168">/var/lib/postgresql/data</code></p></li><li class="list__item" id="badufc_157"><p id="badufc_169">Un <span class="control" id="badufc_170">healthcheck</span> utilisant la commande <code class="code" id="badufc_171">pg_isready -U yapuka</code> (intervalle 5s, timeout 5s, 5 retries)</p></li><li class="list__item" id="badufc_158"><p id="badufc_172">Le port 5432 expos&eacute;</p></li></ul><aside class="prompt" data-type="tip" data-title="" id="badufc_150"><p id="badufc_173"><span class="control" id="badufc_174">Indice :</span> Les variables d'environnement de l'image officielle PostgreSQL sont <code class="code" id="badufc_175">POSTGRES_DB</code>, <code class="code" id="badufc_176">POSTGRES_USER</code> et <code class="code" id="badufc_177">POSTGRES_PASSWORD</code>.</p></aside><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-structure-de-base-et-service-postgresql" data-toc="correction-structure-de-base-et-service-postgresql">Correction structure de base et service PostgreSQL</h4></div><div class="collapse__content"><div class="code-block" data-lang="yaml">
+services:
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: yapuka
+      POSTGRES_USER: yapuka
+      POSTGRES_PASSWORD: yapuka
+    ports:
+      - &quot;5432:5432&quot;
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ &quot;CMD-SHELL&quot;, &quot;pg_isready -U yapuka&quot; ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  db_data:
+</div></div></div></section></section><section class="chapter"><h3 id="2-2-service-redis" data-toc="2-2-service-redis">2.2 Service Redis</h3><p id="badufc_179">Ajoutez le service Redis &agrave; la suite.</p><p id="badufc_180"><span class="control" id="badufc_183">&Agrave; vous de jouer :</span> ajoutez un service <code class="code" id="badufc_184">redis</code> avec :</p><ul class="list _bullet" id="badufc_181"><li class="list__item" id="badufc_185"><p id="badufc_188">L'image <code class="code" id="badufc_189">redis:7-alpine</code></p></li><li class="list__item" id="badufc_186"><p id="badufc_190">Un volume nomm&eacute; <code class="code" id="badufc_191">redis_data</code> mont&eacute; sur <code class="code" id="badufc_192">/data</code></p></li><li class="list__item" id="badufc_187"><p id="badufc_193">Le port 6379 expos&eacute;</p></li></ul><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-service-redis" data-toc="correction-service-redis">Correction Service Redis</h4></div><div class="collapse__content"><div class="code-block" data-lang="yaml">
+  redis:
+    image: redis:7-alpine
+    ports:
+      - &quot;6379:6379&quot;
+    volumes:
+      - redis_data:/data
+
+  volumes:
+    db_data:
+    redis_data:
+</div></div></div></section></section><section class="chapter"><h3 id="2-3-service-backend-php-fpm" data-toc="2-3-service-backend-php-fpm">2.3 Service Backend (PHP-FPM)</h3><p id="badufc_195">Le backend doit &ecirc;tre <span class="control" id="badufc_200">construit</span> &agrave; partir du Dockerfile dans <code class="code" id="badufc_201">api/</code> et doit attendre que PostgreSQL soit pr&ecirc;t avant de d&eacute;marrer.</p><p id="badufc_196"><span class="control" id="badufc_202">&Agrave; vous de jouer :</span> ajoutez un service <code class="code" id="badufc_203">php</code> avec :</p><ul class="list _bullet" id="badufc_197"><li class="list__item" id="badufc_204"><p id="badufc_208">Un <code class="code" id="badufc_209">build</code> pointant vers le contexte <code class="code" id="badufc_210">./api</code> et le Dockerfile <code class="code" id="badufc_211">Dockerfile</code></p></li><li class="list__item" id="badufc_205"><p id="badufc_212">Un <span class="control" id="badufc_213">bind mount</span> du dossier <code class="code" id="badufc_214">./api</code> vers <code class="code" id="badufc_215">/var/www/api</code> (pour le d&eacute;veloppement)</p></li><li class="list__item" id="badufc_206"><p id="badufc_216">Les variables d'environnement : <code class="code" id="badufc_217">APP_ENV=dev</code>, <code class="code" id="badufc_218">DATABASE_URL</code> pointant vers le service <code class="code" id="badufc_219">database</code>, <code class="code" id="badufc_220">REDIS_URL</code> pointant vers le service <code class="code" id="badufc_221">redis</code></p></li><li class="list__item" id="badufc_207"><p id="badufc_222">Une d&eacute;pendance vers <code class="code" id="badufc_223">database</code> avec la condition <code class="code" id="badufc_224">service_healthy</code> et vers <code class="code" id="badufc_225">redis</code> avec <code class="code" id="badufc_226">service_started</code></p></li></ul><aside class="prompt" data-type="tip" data-title="" id="badufc_198"><p id="badufc_227"><span class="control" id="badufc_228">Indice :</span> Dans Docker Compose, les services se r&eacute;f&eacute;rencent par leur nom. L'URL PostgreSQL sera de la forme <code class="code" id="badufc_229">postgresql://user:password@nom_service:5432/base</code>.</p></aside><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-service-backend" data-toc="correction-service-backend">Correction Service Backend</h4></div><div class="collapse__content"><div class="code-block" data-lang="yaml">
+  php:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    volumes:
+      - ./api:/var/www/api
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: &quot;postgresql://yapuka:yapuka@database:5432/yapuka?serverVersion=16&quot;
+      REDIS_URL: &quot;redis://redis:6379&quot;
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_started
+</div></div></div></section></section><section class="chapter"><h3 id="2-4-service-frontend-react-vite" data-toc="2-4-service-frontend-react-vite">2.4 Service Frontend (React / Vite)</h3><p id="badufc_231"><span class="control" id="badufc_235">&Agrave; vous de jouer :</span> ajoutez un service <code class="code" id="badufc_236">front</code> avec :</p><ul class="list _bullet" id="badufc_232"><li class="list__item" id="badufc_237"><p id="badufc_241">Un <code class="code" id="badufc_242">build</code> pointant vers <code class="code" id="badufc_243">./front</code></p></li><li class="list__item" id="badufc_238"><p id="badufc_244">Un bind mount de <code class="code" id="badufc_245">./front</code> vers <code class="code" id="badufc_246">/app</code>, <span class="control" id="badufc_247">mais</span> en excluant <code class="code" id="badufc_248">node_modules</code> avec un volume anonyme</p></li><li class="list__item" id="badufc_239"><p id="badufc_249">La variable d'environnement <code class="code" id="badufc_250">VITE_API_URL</code> pointant vers <code class="code" id="badufc_251">http://localhost:8080</code></p></li><li class="list__item" id="badufc_240"><p id="badufc_252">Le port 5173 expos&eacute;</p></li></ul><aside class="prompt" data-type="tip" data-title="" id="badufc_233"><p id="badufc_253"><span class="control" id="badufc_254">Indice :</span> Pour exclure <code class="code" id="badufc_255">node_modules</code> du bind mount, ajoutez un volume anonyme : <code class="code" id="badufc_256">/app/node_modules</code> (sans chemin h&ocirc;te). Docker utilisera les <code class="code" id="badufc_257">node_modules</code> install&eacute;s dans l'image plut&ocirc;t que ceux de votre machine.</p></aside><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-service-frontend" data-toc="correction-service-frontend">Correction Service Frontend</h4></div><div class="collapse__content"><div class="code-block" data-lang="yaml">
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    volumes:
+      - ./front:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: &quot;http://localhost:8080&quot;
+    ports:
+      - &quot;5173:5173&quot;
+</div></div></div></section></section><section class="chapter"><h3 id="2-5-service-nginx-reverse-proxy" data-toc="2-5-service-nginx-reverse-proxy">2.5 Service Nginx (Reverse Proxy)</h3><p id="badufc_259">Le reverse proxy est le point d'entr&eacute;e unique. Il utilise une image officielle et un fichier de configuration que nous allons cr&eacute;er.</p><p id="badufc_260"><span class="control" id="badufc_264">&Agrave; vous de jouer :</span> ajoutez un service <code class="code" id="badufc_265">nginx</code> avec :</p><ul class="list _bullet" id="badufc_261"><li class="list__item" id="badufc_266"><p id="badufc_270">L'image <code class="code" id="badufc_271">nginx:alpine</code></p></li><li class="list__item" id="badufc_267"><p id="badufc_272">Le port <code class="code" id="badufc_273">8080:80</code></p></li><li class="list__item" id="badufc_268"><p id="badufc_274">Deux volumes en lecture seule (<code class="code" id="badufc_275">:ro</code>) : le fichier de config Nginx et le dossier <code class="code" id="badufc_276">api/public</code></p></li><li class="list__item" id="badufc_269"><p id="badufc_277">Des d&eacute;pendances vers <code class="code" id="badufc_278">php</code> et <code class="code" id="badufc_279">front</code></p></li></ul><aside class="prompt" data-type="tip" data-title="" id="badufc_262"><p id="badufc_280"><span class="control" id="badufc_281">Indice :</span> Le fichier de configuration sera mont&eacute; depuis <code class="code" id="badufc_282">./docker/nginx/default.conf</code> vers <code class="code" id="badufc_283">/etc/nginx/conf.d/default.conf</code>. Le dossier <code class="code" id="badufc_284">api/public</code> est mont&eacute; en <code class="code" id="badufc_285">/var/www/api/public</code> pour servir les assets statiques.</p></aside><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-service-nginx" data-toc="correction-service-nginx">Correction Service Nginx</h4></div><div class="collapse__content"><div class="code-block" data-lang="yaml">
+  nginx:
+    image: nginx:alpine
+    ports:
+      - &quot;8080:80&quot;
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./api/public:/var/www/api/public:ro
+    depends_on:
+      - php
+      - front
+</div></div></div></section></section><section class="chapter"><h3 id="2-6-r-seau-et-assemblage-final" data-toc="2-6-r-seau-et-assemblage-final">2.6 R&eacute;seau et assemblage final</h3><p id="badufc_287">Par d&eacute;faut, Docker Compose cr&eacute;e un r&eacute;seau <code class="code" id="badufc_291">bridge</code> commun pour tous les services. Pour un projet de formation, un seul r&eacute;seau suffit.</p><p id="badufc_288"><span class="control" id="badufc_292">&Agrave; vous de jouer :</span> ajoutez un r&eacute;seau nomm&eacute; <code class="code" id="badufc_293">yapuka</code> de type <code class="code" id="badufc_294">bridge</code> et connectez-y <span class="control" id="badufc_295">tous</span> les services.</p><aside class="prompt" data-type="tip" data-title="" id="badufc_289"><p id="badufc_296"><span class="control" id="badufc_297">Indice :</span> Ajoutez un bloc <code class="code" id="badufc_298">networks:</code> global, puis ajoutez <code class="code" id="badufc_299">networks: - yapuka</code> dans chaque service.</p></aside><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-r-seau-et-assemblage-final" data-toc="correction-r-seau-et-assemblage-final">Correction R&eacute;seau et assemblage final</h4></div><div class="collapse__content"><p id="badufc_300">Ajoutez &agrave; la fin du fichier :</p><div class="code-block" data-lang="yaml">
+networks:
+  yapuka:
+    driver: bridge
+</div><p id="badufc_302">Et dans chaque service, ajoutez :</p><div class="code-block" data-lang="yaml">
+    networks:
+      - yapuka
+</div><p id="badufc_304">Le fichier complet est :</p><div class="code-block" data-lang="yaml">
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - &quot;8080:80&quot;
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./api/public:/var/www/api/public:ro
+    depends_on:
+      - php
+      - front
+    networks:
+      - yapuka
+
+  php:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    volumes:
+      - ./api:/var/www/api
+    environment:
+      APP_ENV: dev
+      DATABASE_URL: &quot;postgresql://yapuka:yapuka@database:5432/yapuka?serverVersion=16&quot;
+      REDIS_URL: &quot;redis://redis:6379&quot;
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - yapuka
+
+  front:
+    build:
+      context: ./front
+      dockerfile: Dockerfile
+    volumes:
+      - ./front:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: &quot;http://localhost:8080&quot;
+    ports:
+      - &quot;5173:5173&quot;
+    networks:
+      - yapuka
+
+  database:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: yapuka
+      POSTGRES_USER: yapuka
+      POSTGRES_PASSWORD: yapuka
+    ports:
+      - &quot;5432:5432&quot;
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ &quot;CMD-SHELL&quot;, &quot;pg_isready -U yapuka&quot; ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - yapuka
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - &quot;6379:6379&quot;
+    volumes:
+      - redis_data:/data
+    networks:
+      - yapuka
+
+volumes:
+  db_data:
+  redis_data:
+
+networks:
+  yapuka:
+    driver: bridge
+</div></div></div></section></section></section><section class="chapter"><h2 id="tape-3-configurer-le-reverse-proxy-nginx-8-min" data-toc="tape-3-configurer-le-reverse-proxy-nginx-8-min">&Eacute;tape 3 &mdash; Configurer le Reverse Proxy Nginx (8 min)</h2><p id="badufc_307">Nginx re&ccedil;oit toutes les requ&ecirc;tes sur le port 80 et les distribue au bon service.</p><section class="chapter"><h3 id="3-1-cr-er-le-fichier-de-configuration" data-toc="3-1-cr-er-le-fichier-de-configuration">3.1 Cr&eacute;er le fichier de configuration</h3><p id="badufc_310">Cr&eacute;ez le dossier et le fichier :</p><div class="code-block" data-lang="bash">
+mkdir -p docker/nginx
+</div><p id="badufc_312"><span class="control" id="badufc_317">&Agrave; vous de jouer :</span> cr&eacute;ez le fichier <code class="code" id="badufc_318">docker/nginx/default.conf</code> qui :</p><ol class="list _decimal" id="badufc_313" type="1"><li class="list__item" id="badufc_319"><p id="badufc_323">&Eacute;coute sur le port 80</p></li><li class="list__item" id="badufc_320"><p id="badufc_324">Route les requ&ecirc;tes <code class="code" id="badufc_325">/api</code> vers le backend PHP-FPM via <span class="control" id="badufc_326">FastCGI</span> (port 9000 du service <code class="code" id="badufc_327">php</code>)</p></li><li class="list__item" id="badufc_321"><p id="badufc_328">Route toutes les autres requ&ecirc;tes (<code class="code" id="badufc_329">/</code>) vers le frontend Vite (port 5173 du service <code class="code" id="badufc_330">front</code>)</p></li><li class="list__item" id="badufc_322"><p id="badufc_331">Support les WebSockets pour le Hot Module Replacement de Vite (headers <code class="code" id="badufc_332">Upgrade</code> et <code class="code" id="badufc_333">Connection</code>)</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="badufc_314"><p id="badufc_334"><span class="control" id="badufc_335">Indice FastCGI :</span> Pour transmettre les requ&ecirc;tes PHP &agrave; PHP-FPM, utilisez la directive <code class="code" id="badufc_336">fastcgi_pass php:9000;</code> et sp&eacute;cifiez le <code class="code" id="badufc_337">SCRIPT_FILENAME</code> pointant vers <code class="code" id="badufc_338">/var/www/api/public/index.php</code>. N'oubliez pas d'inclure <code class="code" id="badufc_339">fastcgi_params</code>.</p></aside><aside class="prompt" data-type="tip" data-title="" id="badufc_315"><p id="badufc_340"><span class="control" id="badufc_342">Indice WebSocket :</span> Vite utilise les WebSockets pour le rechargement &agrave; chaud. Ajoutez dans le bloc <code class="code" id="badufc_343">location /</code>:</p><div class="code-block" data-lang="none">
+proxy_http_version 1.1;
+proxy_set_header Upgrade $http_upgrade;
+proxy_set_header Connection &quot;upgrade&quot;;
+</div></aside><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-configuration-nginx" data-toc="correction-configuration-nginx">Correction configuration Nginx</h4></div><div class="collapse__content"><div class="code-block" data-lang="nginx">
+server {
+    listen 80;
+    server_name localhost;
+
+    # Taille maximale des requêtes
+    client_max_body_size 10M;
+
+    # Backend Symfony — requêtes /api/*
+    location ~ ^/api/(.*)$ {
+        root /var/www/api/public;
+
+        fastcgi_pass php:9000;
+        fastcgi_split_path_info ^(.+\.php)(/.*)$;
+        include fastcgi_params;
+
+        fastcgi_param SCRIPT_FILENAME /var/www/api/public/index.php;
+        fastcgi_param DOCUMENT_ROOT /var/www/api/public;
+
+        # Timeout étendu pour SSE
+        fastcgi_read_timeout 300;
+        fastcgi_buffering off;
+    }
+
+    # Frontend React — toutes les autres requêtes
+    location / {
+        proxy_pass http://front:5173;
+
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+        # Support WebSocket (Vite HMR)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection &quot;upgrade&quot;;
+    }
+}
+</div></div></div></section></section><section class="chapter"><h3 id="3-2-comprendre-le-routage" data-toc="3-2-comprendre-le-routage">3.2 Comprendre le routage</h3><p id="badufc_345">R&eacute;pondez &agrave; ces questions pour v&eacute;rifier votre compr&eacute;hension :</p><ol class="list _decimal" id="badufc_346" type="1"><li class="list__item" id="badufc_348"><p id="badufc_351">Un utilisateur acc&egrave;de &agrave; <code class="code" id="badufc_352">http://localhost:8080/api/tasks</code>. Quel service traite cette requ&ecirc;te ?</p></li><li class="list__item" id="badufc_349"><p id="badufc_353">Un utilisateur acc&egrave;de &agrave; <code class="code" id="badufc_354">http://localhost:8080/login</code>. Quel service traite cette requ&ecirc;te ?</p></li><li class="list__item" id="badufc_350"><p id="badufc_355">Pourquoi utilise-t-on <code class="code" id="badufc_356">fastcgi_pass</code> pour PHP et <code class="code" id="badufc_357">proxy_pass</code> pour React ?</p></li></ol><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-routage" data-toc="correction-routage">Correction routage</h4></div><div class="collapse__content"><ol class="list _decimal" id="badufc_358" type="1"><li class="list__item" id="badufc_360"><p id="badufc_363"><span class="control" id="badufc_364">PHP-FPM</span> &mdash; l'URL commence par <code class="code" id="badufc_365">/api</code>, donc Nginx la transmet au backend Symfony via FastCGI.</p></li><li class="list__item" id="badufc_361"><p id="badufc_366"><span class="control" id="badufc_367">Vite (front)</span> &mdash; l'URL ne commence pas par <code class="code" id="badufc_368">/api</code>, donc Nginx la transmet au serveur de d&eacute;veloppement React.</p></li><li class="list__item" id="badufc_362"><p id="badufc_369"><span class="control" id="badufc_370">FastCGI</span> est le protocole natif de PHP-FPM (il ne comprend pas HTTP directement). <span class="control" id="badufc_371">proxy_pass</span> est un proxy HTTP classique, adapt&eacute; au serveur Node.js de Vite qui parle HTTP.</p></li></ol></div></div></section></section></section><section class="chapter"><h2 id="tape-4-lancer-et-valider-la-stack-7-min" data-toc="tape-4-lancer-et-valider-la-stack-7-min">&Eacute;tape 4 &mdash; Lancer et valider la stack (7 min)</h2><section class="chapter"><h3 id="4-1-d-marrage" data-toc="4-1-d-marrage">4.1 D&eacute;marrage</h3><p id="badufc_377">Lancez l'ensemble des services :</p><div class="code-block" data-lang="bash">
+docker compose up -d
+</div><p id="badufc_379">V&eacute;rifiez que tous les services sont en cours d'ex&eacute;cution :</p><div class="code-block" data-lang="bash">
+docker compose ps
+</div><aside class="prompt" data-type="tip" data-title="" id="badufc_381"><p id="badufc_384"><span class="control" id="badufc_385">Attendu :</span> 5 services avec le statut <code class="code" id="badufc_386">Up</code> ou <code class="code" id="badufc_387">running</code>. Le service <code class="code" id="badufc_388">database</code> devrait indiquer <code class="code" id="badufc_389">(healthy)</code>.</p></aside><p id="badufc_382">Si un service est en erreur, consultez ses logs :</p><div class="code-block" data-lang="bash">
+docker compose logs -f php
+</div></section><section class="chapter"><h3 id="4-2-v-rifier-les-connexions" data-toc="4-2-v-rifier-les-connexions">4.2 V&eacute;rifier les connexions</h3><p id="badufc_390"><span class="control" id="badufc_399">Testez PostgreSQL :</span></p><div class="code-block" data-lang="bash">
+docker compose exec database psql -U yapuka -c &quot;SELECT version();&quot;
+</div><aside class="prompt" data-type="tip" data-title="" id="badufc_392"><p id="badufc_400"><span class="control" id="badufc_401">Attendu :</span> la version de PostgreSQL s'affiche.</p></aside><p id="badufc_393"><span class="control" id="badufc_402">Testez Redis :</span></p><div class="code-block" data-lang="bash">
+docker compose exec redis redis-cli ping
+</div><aside class="prompt" data-type="tip" data-title="" id="badufc_395"><p id="badufc_403"><span class="control" id="badufc_404">Attendu :</span> <code class="code" id="badufc_405">PONG</code></p></aside><p id="badufc_396"><span class="control" id="badufc_406">Testez le backend Symfony :</span></p><div class="code-block" data-lang="bash">
+docker compose exec php php bin/console about
+</div><aside class="prompt" data-type="tip" data-title="" id="badufc_398"><p id="badufc_407"><span class="control" id="badufc_408">Attendu :</span> les informations Symfony s'affichent (version, environnement, etc.)</p></aside></section><section class="chapter"><h3 id="4-3-initialiser-la-base-de-donn-es" data-toc="4-3-initialiser-la-base-de-donn-es">4.3 Initialiser la base de donn&eacute;es</h3><p id="badufc_409">Ex&eacute;cutez les commandes suivantes pour pr&eacute;parer l'application :</p><div class="code-block" data-lang="bash">
+# Générer les clés JWT (nécessaires pour l'authentification)
+docker compose exec php php bin/console lexik:jwt:generate-keypair
+
+# Créer le schéma de la base de données
+docker compose exec php php bin/console doctrine:schema:create
+
+# Charger les données de démonstration
+docker compose exec php php bin/console doctrine:fixtures:load --no-interaction
+</div></section><section class="chapter"><h3 id="4-4-test-de-bout-en-bout" data-toc="4-4-test-de-bout-en-bout">4.4 Test de bout en bout</h3><p id="badufc_411">Ouvrez votre navigateur sur <span class="control" id="badufc_414">http://localhost:8080</span>.</p><ol class="list _decimal" id="badufc_412" type="1"><li class="list__item" id="badufc_415"><p id="badufc_418">La page de connexion React doit s'afficher</p></li><li class="list__item" id="badufc_416"><p id="badufc_419">Connectez-vous avec <code class="code" id="badufc_420">demo@yapuka.dev</code>/<code class="code" id="badufc_421">password</code></p></li><li class="list__item" id="badufc_417"><p id="badufc_422">Le dashboard avec les t&acirc;ches doit s'afficher</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="badufc_413"><p id="badufc_423">Si la page ne charge pas, v&eacute;rifiez les logs Nginx : <code class="code" id="badufc_424">docker compose logs nginx</code></p></aside></section><section class="chapter"><h3 id="4-5-tester-la-persistence" data-toc="4-5-tester-la-persistence">4.5 Tester la persistence</h3><p id="badufc_425">V&eacute;rifiez que les donn&eacute;es survivent &agrave; un red&eacute;marrage :</p><div class="code-block" data-lang="bash">
+# Arrêter tous les services
+docker compose down
+
+# Relancer
+docker compose up -d
+
+# Vérifier que les données sont toujours là
+docker compose exec database psql -U yapuka -c &quot;SELECT count(*) FROM tasks;&quot;
+</div><aside class="prompt" data-type="tip" data-title="" id="badufc_427"><p id="badufc_430"><span class="control" id="badufc_431">Attendu :</span> le nombre de t&acirc;ches est identique &agrave; avant le red&eacute;marrage.</p></aside><p id="badufc_428"><span class="control" id="badufc_432">Attention :</span> <code class="code" id="badufc_433">docker compose down -v</code> (avec le flag <code class="code" id="badufc_434">-v</code>) supprime les volumes et donc les donn&eacute;es. Ne l'utilisez que si vous voulez repartir de z&eacute;ro.</p><section class="chapter"><div class="collapse"><div class="collapse__title"><h4 id="correction-troubleshooting-des-erreurs-courantes" data-toc="correction-troubleshooting-des-erreurs-courantes">Correction &mdash; Troubleshooting des erreurs courantes</h4></div><div class="collapse__content"><div class="table-wrapper"><table class="wide" id="badufc_435"><thead><tr class="ijRowHead" id="badufc_437"><th id="badufc_444"><p>Sympt&ocirc;me</p></th><th id="badufc_445"><p>Cause probable</p></th><th id="badufc_446"><p>Solution</p></th></tr></thead><tbody><tr id="badufc_438"><td id="badufc_447"><p><code class="code" id="badufc_450">php</code> ne d&eacute;marre pas</p></td><td id="badufc_448"><p>PostgreSQL pas encore pr&ecirc;t</p></td><td id="badufc_449"><p>V&eacute;rifiez le <code class="code" id="badufc_451">depends_on</code> avec <code class="code" id="badufc_452">condition: service_healthy</code></p></td></tr><tr id="badufc_439"><td id="badufc_453"><p><code class="code" id="badufc_456">Connection refused</code> sur <code class="code" id="badufc_457">/api</code></p></td><td id="badufc_454"><p><code class="code" id="badufc_458">fastcgi_pass</code> pointe vers le mauvais h&ocirc;te</p></td><td id="badufc_455"><p>V&eacute;rifiez que c'est <code class="code" id="badufc_459">php:9000</code> et non <code class="code" id="badufc_460">localhost:9000</code></p></td></tr><tr id="badufc_440"><td id="badufc_461"><p>Page blanche sur <code class="code" id="badufc_464">:8080</code></p></td><td id="badufc_462"><p>Vite n'a pas d&eacute;marr&eacute;</p></td><td id="badufc_463"><p>V&eacute;rifiez les logs du front : <code class="code" id="badufc_465">docker compose logs front</code></p></td></tr><tr id="badufc_441"><td id="badufc_466"><p><code class="code" id="badufc_469">node_modules</code> introuvable</p></td><td id="badufc_467"><p>Volume anonyme mal configur&eacute;</p></td><td id="badufc_468"><p>V&eacute;rifiez que <code class="code" id="badufc_470">/app/node_modules</code> est bien dans les volumes du front</p></td></tr><tr id="badufc_442"><td id="badufc_471"><p>Donn&eacute;es perdues apr&egrave;s red&eacute;marrage</p></td><td id="badufc_472"><p>Volumes nomm&eacute;s non d&eacute;finis</p></td><td id="badufc_473"><p>V&eacute;rifiez le bloc <code class="code" id="badufc_474">volumes:</code> global en bas du fichier</p></td></tr><tr id="badufc_443"><td id="badufc_475"><p>Erreur JWT</p></td><td id="badufc_476"><p>Cl&eacute;s non g&eacute;n&eacute;r&eacute;es</p></td><td id="badufc_477"><p>Relancez <code class="code" id="badufc_478">lexik:jwt:generate-keypair</code></p></td></tr></tbody></table></div></div></div></section></section></section><section class="chapter"><h2 id="r-capitulatif" data-toc="r-capitulatif">R&eacute;capitulatif</h2><section class="chapter"><h3 id="commandes-essentielles" data-toc="commandes-essentielles">Commandes essentielles</h3><div class="table-wrapper"><table class="wide" id="badufc_481"><thead><tr class="ijRowHead" id="badufc_482"><th id="badufc_490"><p>Commande</p></th><th id="badufc_491"><p>Description</p></th></tr></thead><tbody><tr id="badufc_483"><td id="badufc_492"><p><code class="code" id="badufc_494">docker compose up -d</code></p></td><td id="badufc_493"><p>D&eacute;marrer tous les services en arri&egrave;re-plan</p></td></tr><tr id="badufc_484"><td id="badufc_495"><p><code class="code" id="badufc_497">docker compose ps</code></p></td><td id="badufc_496"><p>Voir l'&eacute;tat des services</p></td></tr><tr id="badufc_485"><td id="badufc_498"><p><code class="code" id="badufc_500">docker compose logs -f [service]</code></p></td><td id="badufc_499"><p>Suivre les logs d'un service</p></td></tr><tr id="badufc_486"><td id="badufc_501"><p><code class="code" id="badufc_503">docker compose exec php bash</code></p></td><td id="badufc_502"><p>Ouvrir un shell dans le conteneur PHP</p></td></tr><tr id="badufc_487"><td id="badufc_504"><p><code class="code" id="badufc_506">docker compose down</code></p></td><td id="badufc_505"><p>Arr&ecirc;ter et supprimer les conteneurs</p></td></tr><tr id="badufc_488"><td id="badufc_507"><p><code class="code" id="badufc_509">docker compose down -v</code></p></td><td id="badufc_508"><p>Idem + supprimer les volumes (⚠️ perte de donn&eacute;es)</p></td></tr><tr id="badufc_489"><td id="badufc_510"><p><code class="code" id="badufc_512">docker compose build</code></p></td><td id="badufc_511"><p>Reconstruire les images</p></td></tr></tbody></table></div></section><section class="chapter"><h3 id="ce-que-vous-avez-appris" data-toc="ce-que-vous-avez-appris">Ce que vous avez appris</h3><ul class="list _bullet" id="badufc_513"><li class="list__item" id="badufc_514"><p id="badufc_520"><span class="control" id="badufc_521">Orchestration</span>: un seul fichier <code class="code" id="badufc_522">docker-compose.yml</code> d&eacute;crit toute l'infrastructure</p></li><li class="list__item" id="badufc_515"><p id="badufc_523"><span class="control" id="badufc_524">D&eacute;pendances</span>: <code class="code" id="badufc_525">depends_on</code> avec <code class="code" id="badufc_526">condition</code> garantit l'ordre de d&eacute;marrage</p></li><li class="list__item" id="badufc_516"><p id="badufc_527"><span class="control" id="badufc_528">Healthchecks</span>: Docker v&eacute;rifie qu'un service est r&eacute;ellement pr&ecirc;t, pas juste d&eacute;marr&eacute;</p></li><li class="list__item" id="badufc_517"><p id="badufc_529"><span class="control" id="badufc_530">R&eacute;seaux</span>: les services communiquent par leur nom (DNS interne Docker)</p></li><li class="list__item" id="badufc_518"><p id="badufc_531"><span class="control" id="badufc_532">Volumes</span>: les donn&eacute;es persistent entre les red&eacute;marrages gr&acirc;ce aux volumes nomm&eacute;s</p></li><li class="list__item" id="badufc_519"><p id="badufc_533"><span class="control" id="badufc_534">Reverse proxy</span>: Nginx distribue les requ&ecirc;tes au bon service selon l'URL</p></li></ul></section></section><div class="last-modified">05 mars 2026</div><div data-feedback-placeholder="true"></div><div class="navigation-links _bottom"><a href="lab-5-intro.html" class="navigation-links__prev">5. Orchestration avec Docker Compose</a><a href="lab-6-intro.html" class="navigation-links__next">6. Pipeline CI/CD avec GitHub Actions</a></div></article><div id="disqus_thread"></div></div></section></main></div><script src="https://resources.jetbrains.com/writerside/apidoc/6.25.3-b857/app.js"></script></body></html>

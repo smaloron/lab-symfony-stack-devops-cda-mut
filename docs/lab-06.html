@@ -1,0 +1,705 @@
+<!DOCTYPE html SYSTEM "about:legacy-compat">
+<html lang="en-US" data-preset="contrast" data-primary-color="#307FFF"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta charset="UTF-8"><meta name="robots" content="noindex"><meta name="built-on" content="2026-03-05T13:50:53.555148"><title>Lab 6 &mdash; Pipeline CI/CD avec GitHub Actions | Lab Symfony devops</title><script type="application/json" id="virtual-toc-data">[{"id":"objectifs-du-lab","level":0,"title":"Objectifs du lab","anchor":"#objectifs-du-lab"},{"id":"tape-1-comprendre-le-pipeline-cible","level":0,"title":"Étape 1 — Comprendre le pipeline cible","anchor":"#tape-1-comprendre-le-pipeline-cible"},{"id":"tape-2-cr-er-la-structure-du-workflow","level":0,"title":"Étape 2 — Créer la structure du workflow","anchor":"#tape-2-cr-er-la-structure-du-workflow"},{"id":"tape-3-job-linting-backend-php","level":0,"title":"Étape 3 — Job : Linting backend (PHP)","anchor":"#tape-3-job-linting-backend-php"},{"id":"tape-4-job-linting-frontend-javascript","level":0,"title":"Étape 4 — Job : Linting frontend (JavaScript)","anchor":"#tape-4-job-linting-frontend-javascript"},{"id":"tape-5-job-tests-unitaires-backend","level":0,"title":"Étape 5 — Job : Tests unitaires backend","anchor":"#tape-5-job-tests-unitaires-backend"},{"id":"tape-6-job-build-et-push-des-images-docker","level":0,"title":"Étape 6 — Job : Build et push des images Docker","anchor":"#tape-6-job-build-et-push-des-images-docker"},{"id":"tape-7-job-scan-de-s-curit-avec-trivy","level":0,"title":"Étape 7 — Job : Scan de sécurité avec Trivy","anchor":"#tape-7-job-scan-de-s-curit-avec-trivy"},{"id":"tape-8-job-d-ploiement-staging","level":0,"title":"Étape 8 — Job : Déploiement staging","anchor":"#tape-8-job-d-ploiement-staging"},{"id":"tape-9-fichier-complet-et-validation","level":0,"title":"Étape 9 — Fichier complet et validation","anchor":"#tape-9-fichier-complet-et-validation"},{"id":"pour-aller-plus-loin","level":0,"title":"Pour aller plus loin","anchor":"#pour-aller-plus-loin"}]</script><script type="application/json" id="topic-shortcuts"></script><link href="https://resources.jetbrains.com/writerside/apidoc/6.25.3-b857/app.css" rel="stylesheet"><meta name="msapplication-TileColor" content="#000000"><link rel="apple-touch-icon" sizes="180x180" href="https://jetbrains.com/apple-touch-icon.png"><link rel="icon" type="image/png" sizes="32x32" href="https://jetbrains.com/favicon-32x32.png"><link rel="icon" type="image/png" sizes="16x16" href="https://jetbrains.com/favicon-16x16.png"><meta name="msapplication-TileImage" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-144x144.png"><meta name="msapplication-square70x70logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-70x70.png"><meta name="msapplication-square150x150logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-150x150.png"><meta name="msapplication-wide310x150logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-310x150.png"><meta name="msapplication-square310x310logo" content="https://resources.jetbrains.com/storage/ui/favicons/mstile-310x310.png"><meta name="image" content=""><!-- Open Graph --><meta property="og:title" content="Lab 6 &mdash; Pipeline CI/CD avec GitHub Actions | Lab Symfony devops"><meta property="og:description" content=""><meta property="og:image" content=""><meta property="og:site_name" content="Lab Symfony devops Help"><meta property="og:type" content="website"><meta property="og:locale" content="en_US"><meta property="og:url" content="writerside-documentation/lab-06.html"><!-- End Open Graph --><!-- Twitter Card --><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content=""><meta name="twitter:title" content="Lab 6 &mdash; Pipeline CI/CD avec GitHub Actions | Lab Symfony devops"><meta name="twitter:description" content=""><meta name="twitter:creator" content=""><meta name="twitter:image:src" content=""><!-- End Twitter Card --><!-- Schema.org WebPage --><script type="application/ld+json">{
+    "@context": "http://schema.org",
+    "@type": "WebPage",
+    "@id": "writerside-documentation/lab-06.html#webpage",
+    "url": "writerside-documentation/lab-06.html",
+    "name": "Lab 6 &mdash; Pipeline CI/CD avec GitHub Actions | Lab Symfony devops",
+    "description": "",
+    "image": "",
+    "inLanguage":"en-US"
+}</script><!-- End Schema.org --><!-- Schema.org WebSite --><script type="application/ld+json">{
+    "@type": "WebSite",
+    "@id": "writerside-documentation/#website",
+    "url": "writerside-documentation/",
+    "name": "Lab Symfony devops Help"
+}</script><!-- End Schema.org --></head><body data-id="lab-06" data-main-title="Lab 6 — Pipeline CI/CD avec GitHub Actions" data-article-props="{&quot;seeAlsoStyle&quot;:&quot;links&quot;}" data-template="article" data-breadcrumbs="lab-6-intro.md|6. Pipeline CI/CD avec GitHub Actions"><div class="wrapper"><main class="panel _main"><header class="panel__header"><div class="container"><h3>Lab Symfony devops  Help</h3><div class="panel-trigger"></div></div></header><section class="panel__content"><div class="container"><article class="article" data-shortcut-switcher="inactive"><h1 data-toc="lab-06" id="lab-06.md">Lab 6 — Pipeline CI/CD avec GitHub Actions</h1><section class="chapter"><h2 id="objectifs-du-lab" data-toc="objectifs-du-lab">Objectifs du lab</h2><p id="baehev_14">&Agrave; l'issue de ce lab, vous serez capable de :</p><ul class="list _bullet" id="baehev_15"><li class="list__item" id="baehev_20"><p id="baehev_26">Cr&eacute;er un workflow GitHub Actions complet pour un projet full-stack</p></li><li class="list__item" id="baehev_21"><p id="baehev_27">Configurer des jobs de linting, tests, build et s&eacute;curit&eacute;</p></li><li class="list__item" id="baehev_22"><p id="baehev_28">Mettre en cache les d&eacute;pendances pour acc&eacute;l&eacute;rer le pipeline</p></li><li class="list__item" id="baehev_23"><p id="baehev_29">Builder et pusher des images Docker vers un registry</p></li><li class="list__item" id="baehev_24"><p id="baehev_30">Scanner les images pour d&eacute;tecter des vuln&eacute;rabilit&eacute;s</p></li><li class="list__item" id="baehev_25"><p id="baehev_31">D&eacute;ployer automatiquement sur un environnement de staging</p></li></ul><p id="baehev_16"><span class="control" id="baehev_32">Pr&eacute;requis :</span></p><ul class="list _bullet" id="baehev_17"><li class="list__item" id="baehev_33"><p id="baehev_36">Le projet Yapuka fonctionnel en local avec Docker Compose</p></li><li class="list__item" id="baehev_34"><p id="baehev_37">Un compte GitHub avec un repository contenant le projet</p></li><li class="list__item" id="baehev_35"><p id="baehev_38">Connaissances de base en YAML</p></li></ul><aside class="prompt" data-type="tip" data-title="" id="baehev_18"><p id="baehev_39"><span class="control" id="baehev_42">Rappel de l'architecture Yapuka</span></p><p id="baehev_40">Le projet est compos&eacute; de :</p><ul class="list _bullet" id="baehev_41"><li class="list__item" id="baehev_43"><p id="baehev_46">Un backend <span class="control" id="baehev_47">Symfony 7.2</span> (PHP 8.4, API Platform, PostgreSQL, Redis)</p></li><li class="list__item" id="baehev_44"><p id="baehev_48">Un frontend <span class="control" id="baehev_49">React 18</span> (Vite, Tailwind CSS)</p></li><li class="list__item" id="baehev_45"><p id="baehev_50">Une orchestration <span class="control" id="baehev_51">Docker Compose</span> (Nginx, PHP-FPM, Node, PostgreSQL, Redis)</p></li></ul></aside></section><section class="chapter"><h2 id="tape-1-comprendre-le-pipeline-cible" data-toc="tape-1-comprendre-le-pipeline-cible">&Eacute;tape 1 &mdash; Comprendre le pipeline cible</h2><p id="baehev_52">Avant d'&eacute;crire la moindre ligne de YAML, prenez 5 minutes pour comprendre l'architecture du pipeline que vous allez construire.</p><section class="chapter"><h3 id="sch-ma-du-pipeline" data-toc="sch-ma-du-pipeline">Sch&eacute;ma du pipeline</h3><div class="code-block" data-lang="none">
+  push / PR sur main ou develop
+              │
+     ┌────────┴────────┐
+     ▼                  ▼
+ lint-backend      lint-frontend
+     │                  │
+     └────────┬─────────┘
+              ▼
+        test-backend
+              │
+              ▼
+        build-images
+              │
+              ▼
+       security-scan
+              │
+              ▼
+      deploy-staging
+    (si branche develop)
+</div><p id="baehev_56"><span class="control" id="baehev_58">R&egrave;gles importantes :</span></p><ul class="list _bullet" id="baehev_57"><li class="list__item" id="baehev_59"><p id="baehev_63">Les jobs de lint s'ex&eacute;cutent <span class="control" id="baehev_64">en parall&egrave;le</span></p></li><li class="list__item" id="baehev_60"><p id="baehev_65">Les tests ne d&eacute;marrent que si <span class="control" id="baehev_66">les deux lints</span> r&eacute;ussissent</p></li><li class="list__item" id="baehev_61"><p id="baehev_67">Le build ne d&eacute;marre que si <span class="control" id="baehev_68">les tests</span> r&eacute;ussissent</p></li><li class="list__item" id="baehev_62"><p id="baehev_69">Le d&eacute;ploiement ne se fait que sur la branche <code class="code" id="baehev_70">develop</code></p></li></ul></section><section class="chapter"><h3 id="questions-de-r-flexion" data-toc="questions-de-r-flexion">Questions de r&eacute;flexion</h3><p id="baehev_71">Avant de passer &agrave; la suite, r&eacute;pondez mentalement &agrave; ces questions :</p><ol class="list _decimal" id="baehev_72" type="1"><li class="list__item" id="baehev_74"><p id="baehev_77">Pourquoi ex&eacute;cuter les lints en parall&egrave;le plut&ocirc;t qu'en s&eacute;quence ?</p></li><li class="list__item" id="baehev_75"><p id="baehev_78">Pourquoi bloquer le build si les tests &eacute;chouent ?</p></li><li class="list__item" id="baehev_76"><p id="baehev_79">Quel est l'int&eacute;r&ecirc;t de scanner les images <span class="control" id="baehev_80">apr&egrave;s</span> le build ?</p></li></ol></section></section><section class="chapter"><h2 id="tape-2-cr-er-la-structure-du-workflow" data-toc="tape-2-cr-er-la-structure-du-workflow">&Eacute;tape 2 &mdash; Cr&eacute;er la structure du workflow</h2><section class="chapter"><h3 id="consignes_1" data-toc="consignes_1">Consignes</h3><ol class="list _decimal" id="baehev_83" type="1"><li class="list__item" id="baehev_85"><p id="baehev_88">Cr&eacute;ez le r&eacute;pertoire <code class="code" id="baehev_89">.github/workflows/</code> &agrave; la racine du projet</p></li><li class="list__item" id="baehev_86"><p id="baehev_90">Cr&eacute;ez un fichier <code class="code" id="baehev_91">ci-cd.yml</code> dans ce r&eacute;pertoire</p></li><li class="list__item" id="baehev_87"><p id="baehev_92">D&eacute;finissez :</p><ul class="list _bullet" id="baehev_93"><li class="list__item" id="baehev_94"><p id="baehev_97">Le <span class="control" id="baehev_98">nom</span> du workflow : <code class="code" id="baehev_99">CI/CD Pipeline</code></p></li><li class="list__item" id="baehev_95"><p id="baehev_100">Les <span class="control" id="baehev_101">triggers</span>: le workflow doit se d&eacute;clencher sur les <code class="code" id="baehev_102">push</code> et <code class="code" id="baehev_103">pull_request</code> vers les branches <code class="code" id="baehev_104">main</code> et <code class="code" id="baehev_105">develop</code></p></li><li class="list__item" id="baehev_96"><p id="baehev_106">Une <span class="control" id="baehev_107">variable d'environnement globale</span> <code class="code" id="baehev_108">REGISTRY</code> avec la valeur <code class="code" id="baehev_109">ghcr.io</code> (GitHub Container Registry)</p></li></ul></li></ol><aside class="prompt" data-type="tip" data-title="" id="baehev_84"><p id="baehev_110"><span class="control" id="baehev_113">Aide &mdash; Syntaxe des triggers</span></p><p id="baehev_111">La cl&eacute; <code class="code" id="baehev_114">on</code> accepte plusieurs &eacute;v&eacute;nements. Chaque &eacute;v&eacute;nement peut filtrer sur des branches :</p><div class="code-block" data-lang="yaml">
+on:
+  evenement1:
+    branches: [ branche1, branche2 ]
+</div></aside></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_1" data-toc="correction_1">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="yaml">
+# =============================================================================
+# Pipeline CI/CD - Yapuka
+# =============================================================================
+# Ce workflow s'exécute à chaque push ou pull request sur main et develop.
+# Il enchaîne : lint → tests → build → scan sécurité → déploiement.
+# =============================================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  REGISTRY: ghcr.io
+</div></div></div></section></section><section class="chapter"><h2 id="tape-3-job-linting-backend-php" data-toc="tape-3-job-linting-backend-php">&Eacute;tape 3 &mdash; Job : Linting backend (PHP)</h2><section class="chapter"><h3 id="contexte_1" data-toc="contexte_1">Contexte</h3><p id="baehev_120">Le linting v&eacute;rifie la <span class="control" id="baehev_122">qualit&eacute; du code</span> sans l'ex&eacute;cuter. Pour PHP, deux outils sont courants :</p><div class="table-wrapper"><table class="wide" id="baehev_121"><thead><tr class="ijRowHead" id="baehev_123"><th id="baehev_126"><p>Outil</p></th><th id="baehev_127"><p>R&ocirc;le</p></th></tr></thead><tbody><tr id="baehev_124"><td id="baehev_128"><p><span class="control" id="baehev_130">PHP CS Fixer</span></p></td><td id="baehev_129"><p>V&eacute;rifie le respect des conventions de style (PSR-12)</p></td></tr><tr id="baehev_125"><td id="baehev_131"><p><span class="control" id="baehev_133">PHPStan</span></p></td><td id="baehev_132"><p>Analyse statique &mdash; d&eacute;tecte les bugs potentiels sans ex&eacute;cuter le code</p></td></tr></tbody></table></div></section><section class="chapter"><h3 id="consignes_2" data-toc="consignes_2">Consignes</h3><p id="baehev_134">Ajoutez un job <code class="code" id="baehev_139">lint-backend</code> qui :</p><ol class="list _decimal" id="baehev_135" type="1"><li class="list__item" id="baehev_140"><p id="baehev_147">S'ex&eacute;cute sur <code class="code" id="baehev_148">ubuntu-latest</code></p></li><li class="list__item" id="baehev_141"><p id="baehev_149">Utilise l'action <code class="code" id="baehev_150">actions/checkout@v4</code> pour r&eacute;cup&eacute;rer le code</p></li><li class="list__item" id="baehev_142"><p id="baehev_151">Configure PHP 8.4 avec l'action <code class="code" id="baehev_152">shivammathur/setup-php@v2</code> (extensions : <code class="code" id="baehev_153">intl, pdo_pgsql, redis</code>)</p></li><li class="list__item" id="baehev_143"><p id="baehev_154"><span class="control" id="baehev_155">Met en cache</span> les d&eacute;pendances Composer pour acc&eacute;l&eacute;rer les ex&eacute;cutions suivantes</p></li><li class="list__item" id="baehev_144"><p id="baehev_156">Installe les d&eacute;pendances avec <code class="code" id="baehev_157">composer install</code></p></li><li class="list__item" id="baehev_145"><p id="baehev_158">Ex&eacute;cute PHP CS Fixer en mode <span class="control" id="baehev_159">v&eacute;rification</span> (sans modifier les fichiers)</p></li><li class="list__item" id="baehev_146"><p id="baehev_160">Ex&eacute;cute PHPStan</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="baehev_136"><p id="baehev_161"><span class="control" id="baehev_163">Aide &mdash; Cache Composer</span></p><p id="baehev_162">L'action <code class="code" id="baehev_164">actions/cache@v4</code> utilise une <code class="code" id="baehev_165">key</code> bas&eacute;e sur un hash de fichier pour savoir si le cache est valide. Pour Composer, le fichier de r&eacute;f&eacute;rence est <code class="code" id="baehev_166">composer.lock</code>. Le chemin &agrave; mettre en cache est <code class="code" id="baehev_167">api/vendor</code>.</p></aside><aside class="prompt" data-type="tip" data-title="" id="baehev_137"><p id="baehev_168"><span class="control" id="baehev_172">Aide &mdash; PHP CS Fixer</span></p><p id="baehev_169">PHP CS Fixer n'est pas encore install&eacute; dans le projet. Vous devrez l'installer via Composer (<code class="code" id="baehev_173">require-dev</code>), puis cr&eacute;er un fichier de configuration <code class="code" id="baehev_174">.php-cs-fixer.dist.php</code> dans le dossier <code class="code" id="baehev_175">api/</code>.</p><p id="baehev_170">En mode v&eacute;rification (dry-run), la commande est :</p><div class="code-block" data-lang="bash">
+vendor/bin/php-cs-fixer fix --dry-run --diff
+</div></aside><aside class="prompt" data-type="tip" data-title="" id="baehev_138"><p id="baehev_176"><span class="control" id="baehev_178">Aide &mdash; PHPStan</span></p><p id="baehev_177">De m&ecirc;me, PHPStan doit &ecirc;tre install&eacute; via Composer. Il n&eacute;cessite un fichier <code class="code" id="baehev_179">phpstan.neon</code> pour sa configuration. Un bon point de d&eacute;part est le niveau d'analyse <code class="code" id="baehev_180">5</code> sur le dossier <code class="code" id="baehev_181">src</code>.</p></aside></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_2" data-toc="correction_2">Correction</h3></div><div class="collapse__content"><p id="baehev_182"><span class="control" id="baehev_189">Fichier <code class="code" id="baehev_190">api/.php-cs-fixer.dist.php</code>:</span></p><div class="code-block" data-lang="php">
+&lt;?php
+
+// =============================================================================
+// Configuration PHP CS Fixer - Règles de style PSR-12
+// =============================================================================
+
+$finder = (new PhpCsFixer\Finder())
+    -&gt;in(__DIR__ . '/src')
+    -&gt;in(__DIR__ . '/tests');
+
+return (new PhpCsFixer\Config())
+    -&gt;setRules([
+        '@PSR12' =&gt; true,
+        '@Symfony' =&gt; true,
+    ])
+    -&gt;setFinder($finder);
+</div><p id="baehev_184"><span class="control" id="baehev_191">Fichier <code class="code" id="baehev_192">api/phpstan.neon</code>:</span></p><div class="code-block" data-lang="neon">
+# =============================================================================
+# Configuration PHPStan - Analyse statique du code PHP
+# =============================================================================
+
+parameters:
+    # Niveau d'analyse (0 = permissif, 9 = strict)
+    level: 5
+    # Dossiers à analyser
+    paths:
+        - src
+</div><p id="baehev_186"><span class="control" id="baehev_193">Job dans <code class="code" id="baehev_194">ci-cd.yml</code>:</span></p><div class="code-block" data-lang="yaml">
+jobs:
+  # ===========================================================================
+  # Job : Vérification de la qualité du code PHP
+  # ===========================================================================
+  lint-backend:
+    name: Lint Backend (PHP)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+
+    steps:
+      # --- Récupérer le code source ---
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      # --- Installer PHP avec les extensions nécessaires ---
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl, pdo_pgsql, redis
+          tools: composer
+
+      # --- Mettre en cache les dépendances Composer ---
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: api/vendor
+          key: composer-${{ hashFiles('api/composer.lock') }}
+          restore-keys: composer-
+
+      # --- Installer les dépendances ---
+      - name: Installation des dépendances
+        run: composer install --no-interaction --prefer-dist
+
+      # --- Vérifier le style du code (PSR-12) ---
+      - name: PHP CS Fixer
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      # --- Analyse statique du code ---
+      - name: PHPStan
+        run: vendor/bin/phpstan analyse
+</div></div></div></section></section><section class="chapter"><h2 id="tape-4-job-linting-frontend-javascript" data-toc="tape-4-job-linting-frontend-javascript">&Eacute;tape 4 &mdash; Job : Linting frontend (JavaScript)</h2><section class="chapter"><h3 id="contexte_2" data-toc="contexte_2">Contexte</h3><p id="baehev_198">Le projet React utilise d&eacute;j&agrave; ESLint (d&eacute;clar&eacute; dans <code class="code" id="baehev_199">package.json</code>). Vous allez ajouter un job qui v&eacute;rifie le code JavaScript.</p></section><section class="chapter"><h3 id="consignes_3" data-toc="consignes_3">Consignes</h3><p id="baehev_200">Ajoutez un job <code class="code" id="baehev_204">lint-frontend</code> qui :</p><ol class="list _decimal" id="baehev_201" type="1"><li class="list__item" id="baehev_205"><p id="baehev_211">S'ex&eacute;cute sur <code class="code" id="baehev_212">ubuntu-latest</code></p></li><li class="list__item" id="baehev_206"><p id="baehev_213">R&eacute;cup&egrave;re le code</p></li><li class="list__item" id="baehev_207"><p id="baehev_214">Configure Node.js 22 avec l'action <code class="code" id="baehev_215">actions/setup-node@v4</code></p></li><li class="list__item" id="baehev_208"><p id="baehev_216">Met en cache les d&eacute;pendances npm (le chemin &agrave; cacher est <code class="code" id="baehev_217">front/node_modules</code>, la cl&eacute; se base sur <code class="code" id="baehev_218">package-lock.json</code>)</p></li><li class="list__item" id="baehev_209"><p id="baehev_219">Installe les d&eacute;pendances avec <code class="code" id="baehev_220">npm ci</code> (plus rapide et reproductible que <code class="code" id="baehev_221">npm install</code>)</p></li><li class="list__item" id="baehev_210"><p id="baehev_222">Ex&eacute;cute ESLint</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="baehev_202"><p id="baehev_223"><span class="control" id="baehev_224">Attention :</span> Ce job ne doit <span class="control" id="baehev_225">pas</span> d&eacute;pendre du job <code class="code" id="baehev_226">lint-backend</code>. Les deux lints s'ex&eacute;cutent en parall&egrave;le (pas de mot-cl&eacute; <code class="code" id="baehev_227">needs</code>).</p></aside><aside class="prompt" data-type="tip" data-title="" id="baehev_203"><p id="baehev_228"><span class="control" id="baehev_231">Aide &mdash; <code class="code" id="baehev_232">npm ci</code> vs <code class="code" id="baehev_233">npm install</code></span></p><p id="baehev_229"><code class="code" id="baehev_234">npm ci</code>:</p><ul class="list _bullet" id="baehev_230"><li class="list__item" id="baehev_235"><p id="baehev_238">Supprime <code class="code" id="baehev_239">node_modules</code> et installe depuis le <code class="code" id="baehev_240">package-lock.json</code> exact</p></li><li class="list__item" id="baehev_236"><p id="baehev_241">Plus rapide en CI car pas de r&eacute;solution de d&eacute;pendances</p></li><li class="list__item" id="baehev_237"><p id="baehev_242">&Eacute;choue si <code class="code" id="baehev_243">package-lock.json</code> n'est pas &agrave; jour</p></li></ul></aside></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_3" data-toc="correction_3">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="yaml">
+  # ===========================================================================
+  # Job : Vérification de la qualité du code JavaScript
+  # ===========================================================================
+  lint-frontend:
+    name: Lint Frontend (JS)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: front
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      # --- Installer Node.js ---
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # --- Mettre en cache les dépendances npm ---
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: front/node_modules
+          key: npm-${{ hashFiles('front/package-lock.json') }}
+          restore-keys: npm-
+
+      - name: Installation des dépendances
+        run: npm ci
+
+      # --- Vérifier la qualité du code ---
+      - name: ESLint
+        run: npm run lint
+</div></div></div></section></section><section class="chapter"><h2 id="tape-5-job-tests-unitaires-backend" data-toc="tape-5-job-tests-unitaires-backend">&Eacute;tape 5 &mdash; Job : Tests unitaires backend</h2><section class="chapter"><h3 id="contexte_3" data-toc="contexte_3">Contexte</h3><p id="baehev_249">Les tests PHPUnit du projet n&eacute;cessitent une base de donn&eacute;es PostgreSQL et un serveur Redis. GitHub Actions permet de d&eacute;marrer des <span class="control" id="baehev_250">services</span> (conteneurs Docker) accessibles par les jobs.</p></section><section class="chapter"><h3 id="consignes_4" data-toc="consignes_4">Consignes</h3><p id="baehev_251">Ajoutez un job <code class="code" id="baehev_256">test-backend</code> qui :</p><ol class="list _decimal" id="baehev_252" type="1"><li class="list__item" id="baehev_257"><p id="baehev_265"><span class="control" id="baehev_266">D&eacute;pend</span> des deux jobs de lint (<code class="code" id="baehev_267">lint-backend</code> et <code class="code" id="baehev_268">lint-frontend</code>)</p></li><li class="list__item" id="baehev_258"><p id="baehev_269">D&eacute;clare deux <span class="control" id="baehev_271">services</span>:</p><ul class="list _bullet" id="baehev_270"><li class="list__item" id="baehev_272"><p id="baehev_274"><code class="code" id="baehev_275">postgres</code>: image <code class="code" id="baehev_276">postgres:16-alpine</code>, avec les variables <code class="code" id="baehev_277">POSTGRES_DB</code>, <code class="code" id="baehev_278">POSTGRES_USER</code>, <code class="code" id="baehev_279">POSTGRES_PASSWORD</code> correspondant &agrave; la configuration du projet, et un <span class="control" id="baehev_280">healthcheck</span> via <code class="code" id="baehev_281">pg_isready</code></p></li><li class="list__item" id="baehev_273"><p id="baehev_282"><code class="code" id="baehev_283">redis</code>: image <code class="code" id="baehev_284">redis:7-alpine</code></p></li></ul></li><li class="list__item" id="baehev_259"><p id="baehev_285">D&eacute;finit les <span class="control" id="baehev_286">variables d'environnement</span> n&eacute;cessaires au job (DATABASE_URL pointant vers le service <code class="code" id="baehev_287">postgres</code>, REDIS_URL, APP_ENV=test, APP_SECRET)</p></li><li class="list__item" id="baehev_260"><p id="baehev_288">Installe PHP, les d&eacute;pendances Composer</p></li><li class="list__item" id="baehev_261"><p id="baehev_289">G&eacute;n&egrave;re les cl&eacute;s JWT (commande Symfony : <code class="code" id="baehev_290">php bin/console lexik:jwt:generate-keypair</code>)</p></li><li class="list__item" id="baehev_262"><p id="baehev_291">Cr&eacute;e le sch&eacute;ma de la base de donn&eacute;es de test</p></li><li class="list__item" id="baehev_263"><p id="baehev_292">Ex&eacute;cute PHPUnit avec g&eacute;n&eacute;ration de couverture au format Clover</p></li><li class="list__item" id="baehev_264"><p id="baehev_293">Upload le rapport de couverture en tant qu' <span class="control" id="baehev_294">artifact</span> avec <code class="code" id="baehev_295">actions/upload-artifact@v4</code></p></li></ol><aside class="prompt" data-type="tip" data-title="" id="baehev_253"><p id="baehev_296"><span class="control" id="baehev_299">Aide &mdash; Services GitHub Actions</span></p><p id="baehev_297">Les services sont des conteneurs accessibles via <code class="code" id="baehev_300">localhost</code> depuis le runner. Les ports doivent &ecirc;tre mapp&eacute;s explicitement :</p><div class="code-block" data-lang="yaml">
+services:
+  mon-service:
+    image: mon-image
+    ports:
+      - 5432:5432
+    options: &gt;-
+      --health-cmd &quot;commande&quot;
+      --health-interval 10s
+      --health-timeout 5s
+      --health-retries 5
+</div></aside><aside class="prompt" data-type="tip" data-title="" id="baehev_254"><p id="baehev_301"><span class="control" id="baehev_303">Aide &mdash; DATABASE_URL</span></p><p id="baehev_302">En CI, le host de la base de donn&eacute;es est <code class="code" id="baehev_304">localhost</code> (pas <code class="code" id="baehev_305">database</code> comme dans Docker Compose). Adaptez l'URL en cons&eacute;quence.</p></aside><aside class="prompt" data-type="tip" data-title="" id="baehev_255"><p id="baehev_306"><span class="control" id="baehev_308">Aide &mdash; Couverture de code</span></p><p id="baehev_307">PHPUnit g&eacute;n&egrave;re un rapport Clover avec l'option <code class="code" id="baehev_309">--coverage-clover</code>. Xdebug doit &ecirc;tre activ&eacute; dans les extensions PHP (ajoutez <code class="code" id="baehev_310">xdebug</code> dans le setup-php avec <code class="code" id="baehev_311">coverage: xdebug</code>).</p></aside></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_4" data-toc="correction_4">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="yaml">
+  # ===========================================================================
+  # Job : Tests unitaires PHP avec PHPUnit
+  # ===========================================================================
+  test-backend:
+    name: Tests Backend (PHPUnit)
+    runs-on: ubuntu-latest
+    # --- Ce job attend la fin des deux lints ---
+    needs: [ lint-backend, lint-frontend ]
+    defaults:
+      run:
+        working-directory: api
+
+    # --- Services nécessaires (conteneurs Docker) ---
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: yapuka_test
+          POSTGRES_USER: yapuka
+          POSTGRES_PASSWORD: yapuka
+        ports:
+          - 5432:5432
+        options: &gt;-
+          --health-cmd &quot;pg_isready -U yapuka&quot;
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    # --- Variables d'environnement pour Symfony ---
+    env:
+      DATABASE_URL: &quot;postgresql://yapuka:yapuka@localhost:5432/yapuka_test?serverVersion=16&amp;charset=utf8&quot;
+      REDIS_URL: &quot;redis://localhost:6379&quot;
+      APP_ENV: test
+      APP_SECRET: ci-test-secret
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl, pdo_pgsql, redis
+          coverage: xdebug
+          tools: composer
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: api/vendor
+          key: composer-${{ hashFiles('api/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Installation des dépendances
+        run: composer install --no-interaction --prefer-dist
+
+      # --- Générer les clés JWT pour l'authentification ---
+      - name: Génération des clés JWT
+        run: php bin/console lexik:jwt:generate-keypair --skip-if-exists
+
+      # --- Créer le schéma de la base de données de test ---
+      - name: Création du schéma de base de données
+        run: php bin/console doctrine:schema:create --env=test
+
+      # --- Exécuter les tests avec rapport de couverture ---
+      - name: Exécution de PHPUnit
+        run: php bin/phpunit --coverage-clover coverage.xml
+
+      # --- Sauvegarder le rapport de couverture ---
+      - name: Upload du rapport de couverture
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: api/coverage.xml
+</div></div></div></section></section><section class="chapter"><h2 id="tape-6-job-build-et-push-des-images-docker" data-toc="tape-6-job-build-et-push-des-images-docker">&Eacute;tape 6 &mdash; Job : Build et push des images Docker</h2><section class="chapter"><h3 id="contexte_4" data-toc="contexte_4">Contexte</h3><p id="baehev_317">Une fois les tests valid&eacute;s, il faut construire les images Docker et les envoyer sur un <span class="control" id="baehev_318">registry</span> pour pouvoir les d&eacute;ployer. Vous utiliserez le <span class="control" id="baehev_319">GitHub Container Registry</span> (ghcr.io), int&eacute;gr&eacute; &agrave; GitHub.</p></section><section class="chapter"><h3 id="consignes_5" data-toc="consignes_5">Consignes</h3><p id="baehev_320">Ajoutez un job <code class="code" id="baehev_324">build-images</code> qui :</p><ol class="list _decimal" id="baehev_321" type="1"><li class="list__item" id="baehev_325"><p id="baehev_331"><span class="control" id="baehev_332">D&eacute;pend</span> du job <code class="code" id="baehev_333">test-backend</code></p></li><li class="list__item" id="baehev_326"><p id="baehev_334">Ne s'ex&eacute;cute que sur un <span class="control" id="baehev_335">push</span> (pas sur une PR) &mdash; utilisez la condition <code class="code" id="baehev_336">if: github.event_name == 'push'</code></p></li><li class="list__item" id="baehev_327"><p id="baehev_337">Se connecte au registry GHCR avec l'action <code class="code" id="baehev_338">docker/login-action@v3</code> (le username est <code class="code" id="baehev_339">${{ github.actor }}</code>, le password est <code class="code" id="baehev_340">${{ secrets.GITHUB_TOKEN }}</code>)</p></li><li class="list__item" id="baehev_328"><p id="baehev_341">Configure Docker Buildx avec <code class="code" id="baehev_342">docker/setup-buildx-action@v3</code></p></li><li class="list__item" id="baehev_329"><p id="baehev_343">Build et push l'image <span class="control" id="baehev_345">backend</span> avec <code class="code" id="baehev_346">docker/build-push-action@v5</code>:</p><ul class="list _bullet" id="baehev_344"><li class="list__item" id="baehev_347"><p id="baehev_350">Contexte : <code class="code" id="baehev_351">./api</code></p></li><li class="list__item" id="baehev_348"><p id="baehev_352">Tags : <code class="code" id="baehev_353">ghcr.io/${{ github.repository }}/backend:latest</code> et <code class="code" id="baehev_354">ghcr.io/${{ github.repository }}/backend:${{ github.sha }}</code></p></li><li class="list__item" id="baehev_349"><p id="baehev_355">Activez le cache des layers Docker (<code class="code" id="baehev_356">cache-from</code> et <code class="code" id="baehev_357">cache-to</code> de type <code class="code" id="baehev_358">gha</code>)</p></li></ul></li><li class="list__item" id="baehev_330"><p id="baehev_359">Faites de m&ecirc;me pour l'image <span class="control" id="baehev_360">frontend</span> (contexte <code class="code" id="baehev_361">./front</code>)</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="baehev_322"><p id="baehev_362"><span class="control" id="baehev_366">Aide &mdash; Tags d'images</span></p><p id="baehev_363">Deux tags par image :</p><ul class="list _bullet" id="baehev_364"><li class="list__item" id="baehev_367"><p id="baehev_369"><code class="code" id="baehev_370">latest</code>: pointe toujours vers la derni&egrave;re version</p></li><li class="list__item" id="baehev_368"><p id="baehev_371"><code class="code" id="baehev_372">&lt;sha du commit&gt;</code>: permet de tracer exactement quelle version est d&eacute;ploy&eacute;e</p></li></ul><p id="baehev_365">L'utilisation de <code class="code" id="baehev_373">github.sha</code> dans le tag garantit l'unicit&eacute;.</p></aside><aside class="prompt" data-type="tip" data-title="" id="baehev_323"><p id="baehev_374"><span class="control" id="baehev_378">Aide &mdash; Cache des layers Docker</span></p><p id="baehev_375">Docker Buildx peut utiliser le cache de GitHub Actions :</p><div class="code-block" data-lang="yaml">
+cache-from: type=gha
+cache-to: type=gha,mode=max
+</div><p id="baehev_377">Cela &eacute;vite de reconstruire les layers inchang&eacute;s &agrave; chaque pipeline.</p></aside></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_5" data-toc="correction_5">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="yaml">
+  # ===========================================================================
+  # Job : Build et push des images Docker vers GHCR
+  # ===========================================================================
+  build-images:
+    name: Build Images Docker
+    runs-on: ubuntu-latest
+    needs: [ test-backend ]
+    # --- Ne builder que sur un push (pas sur les PR) ---
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      # --- Configurer Docker Buildx (builder amélioré) ---
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # --- Se connecter au GitHub Container Registry ---
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # --- Build et push de l'image backend ---
+      - name: Build &amp; Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./api
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/backend:latest
+            ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # --- Build et push de l'image frontend ---
+      - name: Build &amp; Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./front
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/frontend:latest
+            ghcr.io/${{ github.repository }}/frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+</div></div></div></section></section><section class="chapter"><h2 id="tape-7-job-scan-de-s-curit-avec-trivy" data-toc="tape-7-job-scan-de-s-curit-avec-trivy">&Eacute;tape 7 &mdash; Job : Scan de s&eacute;curit&eacute; avec Trivy</h2><section class="chapter"><h3 id="contexte_5" data-toc="contexte_5">Contexte</h3><p id="baehev_384"><span class="control" id="baehev_386">Trivy</span> est un scanner de vuln&eacute;rabilit&eacute;s open-source qui analyse les images Docker pour d&eacute;tecter :</p><ul class="list _bullet" id="baehev_385"><li class="list__item" id="baehev_387"><p id="baehev_390">Des vuln&eacute;rabilit&eacute;s connues (CVE) dans les packages syst&egrave;me</p></li><li class="list__item" id="baehev_388"><p id="baehev_391">Des d&eacute;pendances applicatives obsol&egrave;tes ou vuln&eacute;rables</p></li><li class="list__item" id="baehev_389"><p id="baehev_392">Des mauvaises configurations</p></li></ul></section><section class="chapter"><h3 id="consignes_6" data-toc="consignes_6">Consignes</h3><p id="baehev_393">Ajoutez un job <code class="code" id="baehev_397">security-scan</code> qui :</p><ol class="list _decimal" id="baehev_394" type="1"><li class="list__item" id="baehev_398"><p id="baehev_402"><span class="control" id="baehev_403">D&eacute;pend</span> du job <code class="code" id="baehev_404">build-images</code></p></li><li class="list__item" id="baehev_399"><p id="baehev_405">Scanne l'image <span class="control" id="baehev_407">backend</span> avec l'action <code class="code" id="baehev_408">aquasecurity/trivy-action@master</code>:</p><ul class="list _bullet" id="baehev_406"><li class="list__item" id="baehev_409"><p id="baehev_413">Image &agrave; scanner : celle que vous venez de pusher (tag <code class="code" id="baehev_414">latest</code>)</p></li><li class="list__item" id="baehev_410"><p id="baehev_415">Format de sortie : <code class="code" id="baehev_416">table</code> (lisible dans les logs)</p></li><li class="list__item" id="baehev_411"><p id="baehev_417">S&eacute;v&eacute;rit&eacute;s &agrave; v&eacute;rifier : <code class="code" id="baehev_418">CRITICAL,HIGH</code></p></li><li class="list__item" id="baehev_412"><p id="baehev_419"><span class="control" id="baehev_420">Exit code <code class="code" id="baehev_421">1</code></span> pour les vuln&eacute;rabilit&eacute;s CRITICAL (le job &eacute;choue si une vuln&eacute;rabilit&eacute; critique est trouv&eacute;e)</p></li></ul></li><li class="list__item" id="baehev_400"><p id="baehev_422">Scanne l'image <span class="control" id="baehev_423">frontend</span> de la m&ecirc;me mani&egrave;re</p></li><li class="list__item" id="baehev_401"><p id="baehev_424">G&eacute;n&egrave;re un rapport au format <code class="code" id="baehev_425">sarif</code> et l'uploade en artifact</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="baehev_395"><p id="baehev_426"><span class="control" id="baehev_428">Aide &mdash; Exit code</span></p><p id="baehev_427">Le param&egrave;tre <code class="code" id="baehev_429">exit-code: '1'</code> fait &eacute;chouer le step (et donc le job) si des vuln&eacute;rabilit&eacute;s du niveau de s&eacute;v&eacute;rit&eacute; indiqu&eacute; sont trouv&eacute;es. Utilisez <code class="code" id="baehev_430">exit-code: '0'</code> si vous voulez simplement signaler sans bloquer.</p></aside><aside class="prompt" data-type="tip" data-title="" id="baehev_396"><p id="baehev_431"><span class="control" id="baehev_432">R&eacute;flexion :</span> En pratique, il est courant de ne bloquer que sur les vuln&eacute;rabilit&eacute;s <code class="code" id="baehev_433">CRITICAL</code> et de simplement alerter pour les <code class="code" id="baehev_434">HIGH</code>. Comment feriez-vous cela avec deux steps distincts ?</p></aside></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction_6" data-toc="correction_6">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="yaml">
+  # ===========================================================================
+  # Job : Scan de sécurité des images Docker
+  # ===========================================================================
+  security-scan:
+    name: Security Scan (Trivy)
+    runs-on: ubuntu-latest
+    needs: [ build-images ]
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      # --- Scanner l'image backend (bloque si vulnérabilité CRITICAL) ---
+      - name: Scan image backend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/backend:latest
+          format: table
+          severity: CRITICAL
+          exit-code: '1'
+
+      # --- Scanner l'image frontend ---
+      - name: Scan image frontend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/frontend:latest
+          format: table
+          severity: CRITICAL
+          exit-code: '1'
+
+      # --- Générer un rapport détaillé (ne bloque pas) ---
+      - name: Rapport SARIF backend
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/backend:latest
+          format: sarif
+          output: backend-trivy.sarif
+          severity: CRITICAL,HIGH
+
+      # --- Sauvegarder le rapport ---
+      - name: Upload rapport de sécurité
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-reports
+          path: &quot;*.sarif&quot;
+</div></div></div></section></section><section class="chapter"><h2 id="tape-8-job-d-ploiement-staging" data-toc="tape-8-job-d-ploiement-staging">&Eacute;tape 8 &mdash; Job : D&eacute;ploiement staging</h2><section class="chapter"><h3 id="contexte" data-toc="contexte">Contexte</h3><p id="baehev_440">Le d&eacute;ploiement automatique sur staging permet de tester chaque changement dans un environnement proche de la production. Ce job ne doit se d&eacute;clencher que pour la branche <code class="code" id="baehev_443">develop</code>.</p><p id="baehev_441">Pour simplifier ce lab, le d&eacute;ploiement consistera &agrave; v&eacute;rifier que tout est pr&ecirc;t et &agrave; ex&eacute;cuter un <span class="control" id="baehev_444">smoke test</span> (v&eacute;rification basique que l'application r&eacute;pond).</p><aside class="prompt" data-type="tip" data-title="" id="baehev_442"><p id="baehev_445">Dans un projet r&eacute;el, vous utiliseriez ici un outil comme <span class="control" id="baehev_446">Heroku</span>, <span class="control" id="baehev_447">Railway</span>, <span class="control" id="baehev_448">Fly.io</span> ou un d&eacute;ploiement SSH/Kubernetes.</p></aside></section><section class="chapter"><h3 id="consignes_7" data-toc="consignes_7">Consignes</h3><p id="baehev_449">Ajoutez un job <code class="code" id="baehev_452">deploy-staging</code> qui :</p><ol class="list _decimal" id="baehev_450" type="1"><li class="list__item" id="baehev_453"><p id="baehev_458"><span class="control" id="baehev_459">D&eacute;pend</span> du job <code class="code" id="baehev_460">security-scan</code></p></li><li class="list__item" id="baehev_454"><p id="baehev_461">Ne s'ex&eacute;cute que sur la branche <code class="code" id="baehev_462">develop</code> &mdash; condition : <code class="code" id="baehev_463">if: github.ref == 'refs/heads/develop'</code></p></li><li class="list__item" id="baehev_455"><p id="baehev_464">D&eacute;clare un <span class="control" id="baehev_465">environment</span> GitHub nomm&eacute; <code class="code" id="baehev_466">staging</code> (cela appara&icirc;tra dans l'onglet Environments du repository)</p></li><li class="list__item" id="baehev_456"><p id="baehev_467">Affiche les images qui seraient d&eacute;ploy&eacute;es (tags backend et frontend)</p></li><li class="list__item" id="baehev_457"><p id="baehev_468">Ex&eacute;cute un smoke test avec <code class="code" id="baehev_469">curl</code> contre l'URL de staging (si elle existe) ou simule le d&eacute;ploiement</p></li></ol><aside class="prompt" data-type="tip" data-title="" id="baehev_451"><p id="baehev_470"><span class="control" id="baehev_474">Aide &mdash; Environments GitHub</span></p><p id="baehev_471">La cl&eacute; <code class="code" id="baehev_475">environment</code> dans un job permet de :</p><ul class="list _bullet" id="baehev_472"><li class="list__item" id="baehev_476"><p id="baehev_478">Suivre les d&eacute;ploiements dans l'interface GitHub</p></li><li class="list__item" id="baehev_477"><p id="baehev_479">Ajouter des r&egrave;gles de protection (approval manuelle, restrictions de branche)</p></li></ul><div class="code-block" data-lang="yaml">
+environment:
+  name: staging
+  url: https://staging.yapuka.dev
+</div></aside></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction" data-toc="correction">Correction</h3></div><div class="collapse__content"><div class="code-block" data-lang="yaml">
+  # ===========================================================================
+  # Job : Déploiement sur l'environnement de staging
+  # ===========================================================================
+  deploy-staging:
+    name: Deploy Staging
+    runs-on: ubuntu-latest
+    needs: [ security-scan ]
+    # --- Uniquement sur la branche develop ---
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.yapuka.dev
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      # --- Afficher les images à déployer ---
+      - name: Résumé du déploiement
+        run: |
+          echo &quot;=== Déploiement Staging ===&quot;
+          echo &quot;Backend:  ghcr.io/${{ github.repository }}/backend:${{ github.sha }}&quot;
+          echo &quot;Frontend: ghcr.io/${{ github.repository }}/frontend:${{ github.sha }}&quot;
+          echo &quot;Commit:   ${{ github.sha }}&quot;
+          echo &quot;Branche:  ${{ github.ref_name }}&quot;
+
+      # --- Ici viendrait le déploiement réel ---
+      # Exemple avec Heroku, Railway, SSH, Kubernetes, etc.
+      - name: Simulation du déploiement
+        run: |
+          echo &quot;Déploiement des images vers staging...&quot;
+          echo &quot;Déploiement simulé avec succès&quot;
+
+      # --- Smoke test : vérifier que l'application répond ---
+      - name: Smoke test
+        run: |
+          echo &quot;Vérification de la disponibilité de l'application...&quot;
+          # En conditions réelles :
+          # curl --fail --retry 5 --retry-delay 10 https://staging.yapuka.dev/api/docs
+          echo &quot;Smoke test réussi&quot;
+</div></div></div></section></section><section class="chapter"><h2 id="tape-9-fichier-complet-et-validation" data-toc="tape-9-fichier-complet-et-validation">&Eacute;tape 9 &mdash; Fichier complet et validation</h2><section class="chapter"><h3 id="consignes" data-toc="consignes">Consignes</h3><ol class="list _decimal" id="baehev_486" type="1"><li class="list__item" id="baehev_487"><p id="baehev_491">Assemblez tous les jobs dans un seul fichier <code class="code" id="baehev_492">ci-cd.yml</code></p></li><li class="list__item" id="baehev_488"><p id="baehev_493">V&eacute;rifiez la syntaxe YAML (l'indentation est cruciale !)</p></li><li class="list__item" id="baehev_489"><p id="baehev_494">Commitez et poussez sur une branche <code class="code" id="baehev_495">develop</code> pour d&eacute;clencher le pipeline</p></li><li class="list__item" id="baehev_490"><p id="baehev_496">Observez l'ex&eacute;cution dans l'onglet <span class="control" id="baehev_497">Actions</span> de votre repository GitHub</p></li></ol></section><section class="chapter"><h3 id="points-de-v-rification" data-toc="points-de-v-rification">Points de v&eacute;rification</h3><ul class="list _bullet" id="baehev_498"><li class="list__item" id="baehev_499"><p id="baehev_505">[ ] Les jobs <code class="code" id="baehev_506">lint-backend</code> et <code class="code" id="baehev_507">lint-frontend</code> s'ex&eacute;cutent en <span class="control" id="baehev_508">parall&egrave;le</span></p></li><li class="list__item" id="baehev_500"><p id="baehev_509">[ ] Le job <code class="code" id="baehev_510">test-backend</code> attend la fin des <span class="control" id="baehev_511">deux</span> lints</p></li><li class="list__item" id="baehev_501"><p id="baehev_512">[ ] Le job <code class="code" id="baehev_513">build-images</code> ne s'ex&eacute;cute <span class="control" id="baehev_514">pas</span> sur les Pull Requests</p></li><li class="list__item" id="baehev_502"><p id="baehev_515">[ ] Le job <code class="code" id="baehev_516">deploy-staging</code> ne s'ex&eacute;cute que sur la branche <span class="control" id="baehev_517">develop</span></p></li><li class="list__item" id="baehev_503"><p id="baehev_518">[ ] Les artifacts (couverture, rapports Trivy) sont bien upload&eacute;s</p></li><li class="list__item" id="baehev_504"><p id="baehev_519">[ ] Les caches Composer et npm sont utilis&eacute;s &agrave; la deuxi&egrave;me ex&eacute;cution</p></li></ul></section><section class="chapter"><h3 id="d-pannage-courant" data-toc="d-pannage-courant">D&eacute;pannage courant</h3><div class="table-wrapper"><table class="wide" id="baehev_520"><thead><tr class="ijRowHead" id="baehev_521"><th id="baehev_527"><p>Probl&egrave;me</p></th><th id="baehev_528"><p>Solution probable</p></th></tr></thead><tbody><tr id="baehev_522"><td id="baehev_529"><p><code class="code" id="baehev_531">Error: Process completed with exit code 2</code> sur PHP CS Fixer</p></td><td id="baehev_530"><p>Le code ne respecte pas PSR-12. Ex&eacute;cutez <code class="code" id="baehev_532">vendor/bin/php-cs-fixer fix</code> localement</p></td></tr><tr id="baehev_523"><td id="baehev_533"><p><code class="code" id="baehev_535">Connection refused</code> sur PostgreSQL</p></td><td id="baehev_534"><p>V&eacute;rifiez que le healthcheck du service est bien configur&eacute; et que le port 5432 est mapp&eacute;</p></td></tr><tr id="baehev_524"><td id="baehev_536"><p><code class="code" id="baehev_538">Permission denied</code> sur les cl&eacute;s JWT</p></td><td id="baehev_537"><p>Ajoutez <code class="code" id="baehev_539">--skip-if-exists</code> &agrave; la commande de g&eacute;n&eacute;ration</p></td></tr><tr id="baehev_525"><td id="baehev_540"><p>Job <code class="code" id="baehev_542">build-images</code> skipped</p></td><td id="baehev_541"><p>Normal sur une PR &mdash; il ne s'ex&eacute;cute que sur un push</p></td></tr><tr id="baehev_526"><td id="baehev_543"><p>Erreur YAML <code class="code" id="baehev_545">mapping values are not allowed here</code></p></td><td id="baehev_544"><p>Probl&egrave;me d'indentation &mdash; utilisez des espaces, jamais des tabulations</p></td></tr></tbody></table></div></section><section class="chapter"><div class="collapse"><div class="collapse__title"><h3 id="correction-fichier-complet" data-toc="correction-fichier-complet">Correction &mdash; Fichier complet</h3></div><div class="collapse__content"><div class="code-block" data-lang="yaml">
+# =============================================================================
+# Pipeline CI/CD - Yapuka
+# =============================================================================
+# Workflow complet : lint → tests → build → sécurité → déploiement
+#
+# Déclencheurs : push ou PR sur main et develop
+# Registry : GitHub Container Registry (ghcr.io)
+# =============================================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # ===========================================================================
+  # Lint Backend - Qualité du code PHP
+  # ===========================================================================
+  lint-backend:
+    name: Lint Backend (PHP)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl, pdo_pgsql, redis
+          tools: composer
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: api/vendor
+          key: composer-${{ hashFiles('api/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Installation des dépendances
+        run: composer install --no-interaction --prefer-dist
+
+      - name: PHP CS Fixer
+        run: vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      - name: PHPStan
+        run: vendor/bin/phpstan analyse
+
+  # ===========================================================================
+  # Lint Frontend - Qualité du code JavaScript
+  # ===========================================================================
+  lint-frontend:
+    name: Lint Frontend (JS)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: front
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: front/node_modules
+          key: npm-${{ hashFiles('front/package-lock.json') }}
+          restore-keys: npm-
+
+      - name: Installation des dépendances
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+  # ===========================================================================
+  # Tests Backend - PHPUnit avec PostgreSQL et Redis
+  # ===========================================================================
+  test-backend:
+    name: Tests Backend (PHPUnit)
+    runs-on: ubuntu-latest
+    needs: [ lint-backend, lint-frontend ]
+    defaults:
+      run:
+        working-directory: api
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: yapuka_test
+          POSTGRES_USER: yapuka
+          POSTGRES_PASSWORD: yapuka
+        ports:
+          - 5432:5432
+        options: &gt;-
+          --health-cmd &quot;pg_isready -U yapuka&quot;
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    env:
+      DATABASE_URL: &quot;postgresql://yapuka:yapuka@localhost:5432/yapuka_test?serverVersion=16&amp;charset=utf8&quot;
+      REDIS_URL: &quot;redis://localhost:6379&quot;
+      APP_ENV: test
+      APP_SECRET: ci-test-secret
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: intl, pdo_pgsql, redis
+          coverage: xdebug
+          tools: composer
+
+      - name: Cache Composer
+        uses: actions/cache@v4
+        with:
+          path: api/vendor
+          key: composer-${{ hashFiles('api/composer.lock') }}
+          restore-keys: composer-
+
+      - name: Installation des dépendances
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Génération des clés JWT
+        run: php bin/console lexik:jwt:generate-keypair --skip-if-exists
+
+      - name: Création du schéma de base de données
+        run: php bin/console doctrine:schema:create --env=test
+
+      - name: Exécution de PHPUnit
+        run: php bin/phpunit --coverage-clover coverage.xml
+
+      - name: Upload du rapport de couverture
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: api/coverage.xml
+
+  # ===========================================================================
+  # Build - Construction et push des images Docker
+  # ===========================================================================
+  build-images:
+    name: Build Images Docker
+    runs-on: ubuntu-latest
+    needs: [ test-backend ]
+    if: github.event_name == 'push'
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build &amp; Push Backend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./api
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/backend:latest
+            ghcr.io/${{ github.repository }}/backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build &amp; Push Frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: ./front
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/frontend:latest
+            ghcr.io/${{ github.repository }}/frontend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ===========================================================================
+  # Sécurité - Scan des images avec Trivy
+  # ===========================================================================
+  security-scan:
+    name: Security Scan (Trivy)
+    runs-on: ubuntu-latest
+    needs: [ build-images ]
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Scan image backend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/backend:latest
+          format: table
+          severity: CRITICAL
+          exit-code: '1'
+
+      - name: Scan image frontend
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/frontend:latest
+          format: table
+          severity: CRITICAL
+          exit-code: '1'
+
+      - name: Rapport SARIF backend
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/backend:latest
+          format: sarif
+          output: backend-trivy.sarif
+          severity: CRITICAL,HIGH
+
+      - name: Upload rapport de sécurité
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-reports
+          path: &quot;*.sarif&quot;
+
+  # ===========================================================================
+  # Déploiement Staging - Branche develop uniquement
+  # ===========================================================================
+  deploy-staging:
+    name: Deploy Staging
+    runs-on: ubuntu-latest
+    needs: [ security-scan ]
+    if: github.ref == 'refs/heads/develop'
+    environment:
+      name: staging
+      url: https://staging.yapuka.dev
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Résumé du déploiement
+        run: |
+          echo &quot;=== Déploiement Staging ===&quot;
+          echo &quot;Backend:  ghcr.io/${{ github.repository }}/backend:${{ github.sha }}&quot;
+          echo &quot;Frontend: ghcr.io/${{ github.repository }}/frontend:${{ github.sha }}&quot;
+          echo &quot;Commit:   ${{ github.sha }}&quot;
+          echo &quot;Branche:  ${{ github.ref_name }}&quot;
+
+      - name: Simulation du déploiement
+        run: |
+          echo &quot;Déploiement des images vers staging...&quot;
+          echo &quot;Déploiement simulé avec succès&quot;
+
+      - name: Smoke test
+        run: |
+          echo &quot;Vérification de la disponibilité...&quot;
+          # curl --fail --retry 5 --retry-delay 10 https://staging.yapuka.dev/api/docs
+          echo &quot;Smoke test réussi&quot;
+</div></div></div></section></section><section class="chapter"><h2 id="pour-aller-plus-loin" data-toc="pour-aller-plus-loin">Pour aller plus loin</h2><p id="baehev_548">Si vous avez termin&eacute; en avance, voici des am&eacute;liorations &agrave; explorer :</p><ol class="list _decimal" id="baehev_549" type="1"><li class="list__item" id="baehev_550"><p id="baehev_555"><span class="control" id="baehev_556">Deploy production avec approval :</span> Ajoutez un job <code class="code" id="baehev_557">deploy-production</code> conditionn&eacute; &agrave; <code class="code" id="baehev_558">main</code> avec un environment prot&eacute;g&eacute; par une approval manuelle dans les settings GitHub.</p></li><li class="list__item" id="baehev_551"><p id="baehev_559"><span class="control" id="baehev_561">Matrix strategy :</span> Testez le backend sur plusieurs versions de PHP (8.3 et 8.4) en utilisant une matrice :</p><div class="code-block" data-lang="yaml">
+strategy:
+  matrix:
+    php-version: ['8.3', '8.4']
+</div></li><li class="list__item" id="baehev_552"><p id="baehev_562"><span class="control" id="baehev_563">Notifications Slack :</span> Ajoutez une notification en cas d'&eacute;chec du pipeline avec l'action <code class="code" id="baehev_564">8398a7/action-slack@v3</code>.</p></li><li class="list__item" id="baehev_553"><p id="baehev_565"><span class="control" id="baehev_567">Badge de statut :</span> Ajoutez un badge dans votre <code class="code" id="baehev_568">README.md</code> pour afficher le statut du pipeline :</p><div class="code-block" data-lang="markdown">
+![CI/CD](https://github.com/&lt;user&gt;/&lt;repo&gt;/actions/workflows/ci-cd.yml/badge.svg)
+</div></li><li class="list__item" id="baehev_554"><p id="baehev_569"><span class="control" id="baehev_571">Concurrency :</span> Emp&ecirc;chez deux pipelines de se d&eacute;ployer simultan&eacute;ment :</p><div class="code-block" data-lang="yaml">
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+</div></li></ol></section><div class="last-modified">05 mars 2026</div><div data-feedback-placeholder="true"></div><div class="navigation-links _bottom"><a href="lab-6-intro.html" class="navigation-links__prev">6. Pipeline CI/CD avec GitHub Actions</a><a href="lab-7-intro.html" class="navigation-links__next">7. Orchestration avec Docker Swarm</a></div></article><div id="disqus_thread"></div></div></section></main></div><script src="https://resources.jetbrains.com/writerside/apidoc/6.25.3-b857/app.js"></script></body></html>
