@@ -370,13 +370,13 @@ dans l'ordre :
 
 ```mermaid
 graph TD
-    A["1. Installer Cypress<br>npm install --save-dev cypress"] --> B
-    B["2. Configurer cypress.config.js<br>baseUrl, env, timeouts"] --> C
-    C["3. Ajouter des data-testid<br>sur les composants React"] --> D
-    D["4. Créer cy.login()<br>dans commands.js"] --> E
-    E["5. Créer les fixtures JSON<br>user.json, task.json"] --> F
-    F["6. Écrire les tests<br>auth.cy.js, tasks.cy.js, stats.cy.js"] --> G
-    G["7. Exécuter et valider<br>cy:open puis cy:run"]
+    A["Installer Cypress<br>npm install --save-dev cypress"] --> B
+    B["Configurer cypress.config.js<br>baseUrl, env, timeouts"] --> C
+    C["Ajouter des data-testid<br>sur les composants React"] --> D
+    D["Créer cy.login()<br>dans commands.js"] --> E
+    E["Créer les fixtures JSON<br>user.json, task.json"] --> F
+    F["Écrire les tests<br>auth.cy.js, tasks.cy.js, stats.cy.js"] --> G
+    G["Exécuter et valider<br>cy:open puis cy:run"]
 
     style A fill:#fff3cd
     style D fill:#d1ecf1

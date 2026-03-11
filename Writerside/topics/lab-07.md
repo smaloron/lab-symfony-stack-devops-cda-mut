@@ -47,8 +47,7 @@ Un cluster Swarm est composé de deux types de nœuds :
 │  │ 4GB / 20GB  │ │ 4GB / 20GB │ │ 4GB / 20GB │  │
 │  │             │ │            │ │            │  │
 │  │ nginx ×1    │ │ php ×1     │ │ php ×1     │  │
-│  │ front ×1    │ │ front ×1   │ │            │  │
-│  │ postgres ×1 │ │            │ │            │  │
+│  │ postgres ×1 │ │ front ×1   │ │ front ×1   │  │
 │  │ redis ×1    │ │            │ │            │  │
 │  └─────────────┘ └────────────┘ └────────────┘  │
 └─────────────────────────────────────────────────┘
@@ -262,9 +261,8 @@ ghi789         worker-2   Ready    Active                          27.x.x
 
 ## 7.5 — Préparation des images Docker
 
-En mode Docker Compose local, Docker construit les images à la volée. En mode Swarm, les workers doivent **pouvoir 
-accéder
-aux images**. Comme nous n'avons pas de registry distant, nous allons mettre en place un **registry privé** sur le
+En mode Docker Compose local, Docker construit les images à la volée. En mode Swarm, les workers doivent **pouvoir
+accéder aux images**. Comme nous n'avons pas de registry distant, nous allons mettre en place un **registry privé** sur le
 manager.
 
 ### Étape 1 : Lancer un registry local
@@ -282,6 +280,16 @@ docker service ls
 curl http://localhost:5000/v2/_catalog
 ```
 
+> **Pourquoi `localhost:5000` fonctionne depuis les workers ?**
+>
+> Le registry est déployé en tant que **service Swarm** avec un port publié. Grâce au **routing mesh**, le port 5000 est
+> accessible sur **tous les nœuds** du cluster, pas seulement sur celui qui héberge le conteneur. Quand un worker accède
+> à `localhost:5000`, la requête est routée automatiquement vers le nœud qui exécute le registry.
+>
+> De plus, Docker autorise par défaut les connexions HTTP (non-TLS) vers `localhost`. Si vous utilisiez l'IP du manager
+> au lieu de `localhost` dans les tags d'images, il faudrait configurer Docker pour accepter ce registry comme
+> « insecure registry » sur chaque nœud.
+
 ### Étape 2 : Builder et pousser les images
 
 Toujours sur le manager, vous devez copier le code source du projet Yapuka, builder les images et les pousser dans le
@@ -291,7 +299,7 @@ registry local.
 >
 > 1. Transférez le dossier du projet sur le manager (utilisez `multipass transfer` ou `multipass mount`)
 > 2. Buildez les images pour le backend PHP et le frontend React en les taguant avec le préfixe `localhost:5000/` (ex :
-     `localhost:5000/yapuka-php:latest`)
+     `localhost:5000/yapuka-php:v1`)
 > 3. Poussez-les dans le registry avec `docker push`
 
 ### Correction {collapsible="true" id="correction_5"}
@@ -309,19 +317,19 @@ multipass shell manager
 cd ~/yapuka
 
 # Builder les images avec le tag du registry local
-docker build -t localhost:5000/yapuka-php:latest ./api
-docker build -t localhost:5000/yapuka-front:latest ./front
+docker build -t localhost:5000/yapuka-php:v1 ./api
+docker build -t localhost:5000/yapuka-front:v1 ./front
 
 # Pousser les images dans le registry
-docker push localhost:5000/yapuka-php:latest
-docker push localhost:5000/yapuka-front:latest
+docker push localhost:5000/yapuka-php:v1
+docker push localhost:5000/yapuka-front:v1
 
 # Vérifier que les images sont dans le registry
 curl http://localhost:5000/v2/_catalog
 # Résultat attendu : {"repositories":["yapuka-php","yapuka-front"]}
 ```
 
-> **Note** : l'image `nginx:alpine`, `postgres:16-alpine` et `redis:7-alpine` sont des images publiques. Swarm les
+> **Note** : les images `nginx:alpine`, `postgres:16-alpine` et `redis:7-alpine` sont des images publiques. Swarm les
 > tirera automatiquement depuis Docker Hub sur chaque nœud.
 
 ---
@@ -341,6 +349,7 @@ ajoutant des directives `deploy` et en remplaçant les `build` par des `image`.
 | Réplication       | Non                  | `deploy.replicas`                                           |
 | Placement         | Non                  | `deploy.placement.constraints`                              |
 | Restart           | `restart: always`    | `deploy.restart_policy`                                     |
+| depends_on        | ✅ Supporté           | ❌ Ignoré silencieusement                                    |
 
 ### À vous de jouer {id="vous-de-jouer_2"}
 
@@ -348,25 +357,29 @@ Créez un fichier `stack.yml` à la racine du projet en adaptant le `docker-comp
 
 **Services et replicas :**
 
-| Service  | Image                                | Replicas | Contrainte de placement |
-|----------|--------------------------------------|----------|-------------------------|
-| nginx    | `nginx:alpine`                       | 1        | manager                 |
-| php      | `localhost:5000/yapuka-php:latest`   | 2        | worker                  |
-| front    | `localhost:5000/yapuka-front:latest` | 2        | worker                  |
-| database | `postgres:16-alpine`                 | 1        | manager                 |
-| redis    | `redis:7-alpine`                     | 1        | manager                 |
+| Service  | Image                             | Replicas | Contrainte de placement |
+|----------|-----------------------------------|----------|-------------------------|
+| nginx    | `nginx:alpine`                    | 1        | manager                 |
+| php      | `localhost:5000/yapuka-php:v1`    | 2        | worker                  |
+| front    | `localhost:5000/yapuka-front:v1`  | 2        | worker                  |
+| database | `postgres:16-alpine`              | 1        | manager                 |
+| redis    | `redis:7-alpine`                  | 1        | manager                 |
 
 **Règles à respecter :**
 
 1. Remplacer tous les `build:` par des `image:`
 2. Supprimer les volumes bind mounts de développement (`./api:/var/www/api`, etc.)
-3. Ajouter une section `deploy` à chaque service avec : `replicas`, `restart_policy` (condition: on-failure),
+3. Supprimer les `depends_on` — ils sont **ignorés par Swarm**. Vos services doivent être résilients et gérer eux-mêmes
+   les retries si une dépendance n'est pas encore prête
+4. Ajouter une section `deploy` à chaque service avec : `replicas`, `restart_policy` (condition: on-failure),
    `placement.constraints`
-4. Pour `php` et `front`, ajouter une `update_config` avec `parallelism: 1` et `delay: 10s`
-5. Remplacer le réseau `yapuka` par un réseau overlay (il suffit de changer le driver)
-6. Conserver les volumes nommés pour `database` et `redis`
-7. Le `healthcheck` de PostgreSQL doit rester
-8. La configuration nginx doit être fournie via un **Docker config** ou montée différemment (voir astuce ci-dessous)
+5. Pour `php` et `front`, ajouter une `update_config` avec `parallelism: 1` et `delay: 10s`
+6. Pour `php` et `front`, ajouter une `rollback_config` avec `parallelism: 1` et `delay: 5s` pour configurer le
+   comportement en cas de rollback
+7. Remplacer le réseau `yapuka` par un réseau overlay (il suffit de changer le driver)
+8. Conserver les volumes nommés pour `database` et `redis`
+9. Le `healthcheck` de PostgreSQL doit rester
+10. La configuration nginx doit être fournie via un **Docker config** ou montée différemment (voir astuce ci-dessous)
 
 > **Astuce pour la config Nginx** : en Swarm, on utilise `docker config` pour distribuer des fichiers de configuration à
 > tous les nœuds :
@@ -385,6 +398,14 @@ Créez un fichier `stack.yml` à la racine du projet en adaptant le `docker-comp
 >       - source: nginx_conf
 >         target: /etc/nginx/conf.d/default.conf
 > ```
+
+> **Important — `depends_on` et Swarm**
+>
+> Contrairement à Docker Compose, `docker stack deploy` **ignore silencieusement** la directive `depends_on`. Swarm
+> démarre tous les services simultanément. C'est pourquoi vos applications doivent être conçues pour **tolérer
+> l'indisponibilité temporaire** de leurs dépendances (retry de connexion à la base de données, etc.). Le healthcheck
+> de PostgreSQL aide : Swarm ne considère le conteneur comme prêt qu'une fois le healthcheck passé, mais cela n'empêche
+> pas les autres services de démarrer en parallèle.
 
 ### Correction {collapsible="true" id="correction_6"}
 
@@ -407,9 +428,6 @@ services:
     configs:
       - source: nginx_conf
         target: /etc/nginx/conf.d/default.conf
-    depends_on:
-      - php
-      - front
     deploy:
       replicas: 1
       restart_policy:
@@ -424,7 +442,7 @@ services:
   # PHP-FPM - Backend Symfony (répliqué sur les workers)
   # ===========================================================================
   php:
-    image: localhost:5000/yapuka-php:latest
+    image: localhost:5000/yapuka-php:v1
     environment:
       APP_ENV: prod
       DATABASE_URL: "postgresql://yapuka:yapuka@database:5432/yapuka?serverVersion=16"
@@ -434,14 +452,14 @@ services:
       update_config:
         parallelism: 1
         delay: 10s
+      rollback_config:
+        parallelism: 1
+        delay: 5s
       restart_policy:
         condition: on-failure
       placement:
         constraints:
           - node.role == worker
-    depends_on:
-      - database
-      - redis
     networks:
       - yapuka
 
@@ -449,12 +467,15 @@ services:
   # Frontend React (répliqué sur les workers)
   # ===========================================================================
   front:
-    image: localhost:5000/yapuka-front:latest
+    image: localhost:5000/yapuka-front:v1
     deploy:
       replicas: 2
       update_config:
         parallelism: 1
         delay: 10s
+      rollback_config:
+        parallelism: 1
+        delay: 5s
       restart_policy:
         condition: on-failure
       placement:
@@ -560,15 +581,18 @@ docker config ls
 
 ### Étape 3 : Vérification
 
-Après le déploiement, exécutez les commandes suivantes et interprétez les résultats :
+Après le déploiement, exécutez les commandes suivantes **depuis le manager** et interprétez les résultats :
 
 1. Listez les stacks déployées
 2. Listez les services de la stack `yapuka`
 3. Affichez la distribution des tasks du service `yapuka_php` (sur quels nœuds tournent-elles ?)
-4. Accédez à l'application via `http://<IP_MANAGER>:8080`
+4. Accédez à l'application via `http://<IP_MANAGER>:8080` depuis votre machine hôte
 
 > **Patience** : le premier déploiement peut prendre 1-2 minutes le temps que les workers tirent les images depuis le
 > registry.
+
+> **Routing mesh** : grâce au routing mesh de Swarm, l'application est accessible via le port 8080 de **n'importe quel
+> nœud** du cluster (manager ou workers), pas seulement celui qui héberge Nginx.
 
 ### Correction {collapsible="true" id="correction_7"}
 
@@ -579,7 +603,7 @@ docker config create nginx_conf ./docker/nginx/default.conf
 # Déployer la stack
 docker stack deploy -c stack.yml yapuka
 
-# Vérifications
+# Vérifications (depuis le manager)
 docker stack ls
 # NAME      SERVICES   ORCHESTRATOR
 # yapuka    5          Swarm
@@ -587,8 +611,8 @@ docker stack ls
 docker stack services yapuka
 # ID        NAME              MODE        REPLICAS   IMAGE
 # xxx       yapuka_nginx      replicated  1/1        nginx:alpine
-# xxx       yapuka_php        replicated  2/2        localhost:5000/yapuka-php:latest
-# xxx       yapuka_front      replicated  2/2        localhost:5000/yapuka-front:latest
+# xxx       yapuka_php        replicated  2/2        localhost:5000/yapuka-php:v1
+# xxx       yapuka_front      replicated  2/2        localhost:5000/yapuka-front:v1
 # xxx       yapuka_database   replicated  1/1        postgres:16-alpine
 # xxx       yapuka_redis      replicated  1/1        redis:7-alpine
 
@@ -598,8 +622,11 @@ docker service ps yapuka_php
 # xxx       yapuka_php.1    worker-1   Running         Running 30 seconds ago
 # xxx       yapuka_php.2    worker-2   Running         Running 28 seconds ago
 
-# Test d'accès
+# Test d'accès (depuis le manager)
 curl -s http://localhost:8080/api/docs | head -5
+
+# Test d'accès (depuis la machine hôte — utilisez l'IP du manager)
+# curl -s http://<IP_MANAGER>:8080/api/docs | head -5
 ```
 
 > **Résolution de problèmes** : si des services restent à 0/N replicas, consultez les logs :
@@ -643,7 +670,7 @@ docker service ps yapuka_php
 # xxx       yapuka_php.3    worker-1   Running         Running 10 seconds ago
 # xxx       yapuka_php.4    worker-2   Running         Running 8 seconds ago
 
-# Tester l'accès
+# Tester l'accès (depuis le manager)
 curl http://localhost:8080/api/tasks/stats
 
 # Réduire à 2 replicas
@@ -739,12 +766,15 @@ docker service rollback yapuka_php
 
 # Vérifier l'image utilisée
 docker service inspect --pretty yapuka_php | grep Image
-# Image: localhost:5000/yapuka-php:latest
+# Image: localhost:5000/yapuka-php:v1
 
 # Voir l'historique complet
 docker service ps yapuka_php
 # Montre les tasks v2 (Shutdown) et les tasks v1 restaurées (Running)
 ```
+
+> **Note** : le rollback utilise la `rollback_config` définie dans le `stack.yml`. Dans notre cas, les replicas sont
+> restaurés un par un (`parallelism: 1`) avec un délai de 5 secondes entre chaque.
 
 ---
 
@@ -759,7 +789,7 @@ C'est le moment de casser des choses volontairement pour vérifier que Swarm tie
 > 1. Depuis votre machine hôte, arrêtez brutalement `worker-1` avec `multipass stop worker-1`
 > 2. Sur le manager, observez l'état des nœuds (`docker node ls`)
 > 3. Observez la redistribution des tasks (`docker service ps yapuka_php`)
-> 4. Testez que l'application est toujours accessible
+> 4. Testez que l'application est toujours accessible via `http://<IP_MANAGER>:8080`
 > 5. Redémarrez `worker-1` avec `multipass start worker-1`
 > 6. Observez sa réintégration dans le cluster
 
@@ -781,7 +811,7 @@ C'est le moment de casser des choses volontairement pour vérifier que Swarm tie
 ```bash
 # --- Test 1 : Panne d'un worker ---
 
-# Arrêter worker-1
+# Arrêter worker-1 (depuis la machine hôte)
 multipass stop worker-1
 
 # Sur le manager : observer (attendre ~30 secondes)
@@ -796,9 +826,12 @@ docker service ps yapuka_php
 # yapuka_php.2       worker-2   Running         Running 5 minutes ago
 
 # L'application reste accessible !
+# Depuis le manager :
 curl http://localhost:8080/api/tasks/stats
+# Depuis la machine hôte :
+# curl http://<IP_MANAGER>:8080/api/tasks/stats
 
-# Redémarrer worker-1
+# Redémarrer worker-1 (depuis la machine hôte)
 multipass start worker-1
 
 # Observer la réintégration (le nœud revient en "Ready")
@@ -842,7 +875,7 @@ Depuis le manager, exécutez les commandes nécessaires pour :
 
 > **Indices** : `docker service logs`, `docker service inspect --pretty`, `docker stats`, `docker stack ps`
 
-### Correction {collapsible="true"}
+### Correction {collapsible="true" id="correction_12"}
 
 ```bash
 # 1. Dernières 50 lignes de logs
@@ -917,3 +950,5 @@ Voici les commandes essentielles vues dans ce lab :
 - Le **self-healing** redémarre automatiquement les conteneurs tombés et replanifie les tasks en cas de panne d'un nœud
 - Les **volumes locaux** ne sont pas partagés entre nœuds — c'est pourquoi on contraint les services avec état (DB,
   cache) sur un nœud spécifique
+- `depends_on` est **ignoré en Swarm** — les services doivent être résilients face à l'indisponibilité temporaire de
+  leurs dépendances

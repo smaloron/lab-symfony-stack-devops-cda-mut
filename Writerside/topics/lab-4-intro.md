@@ -298,7 +298,7 @@ flowchart TD
     end
 
     subgraph Deploy["Phase de déploiement"]
-        E --> F["docker run<br />-e API_URL=https://api.prod.com"]
+        E --> F["docker run<br />-e API_URL=url-api-prod"]
         F --> G["entrypoint.sh<br />génère config.js"]
         G --> H["Nginx démarre<br />port 80"]
     end

@@ -11,8 +11,8 @@
 - Scanner les images pour détecter des vulnérabilités
 - Déployer automatiquement sur un environnement de staging
 
-
 **Prérequis :**
+
 - Le projet Yapuka fonctionnel en local avec Docker Compose
 - Un compte GitHub avec un repository contenant le projet
 - Connaissances de base en YAML
@@ -28,7 +28,8 @@
 
 ## Étape 1 — Comprendre le pipeline cible
 
-Avant d'écrire la moindre ligne de YAML, prenez 5 minutes pour comprendre l'architecture du pipeline que vous allez construire.
+Avant d'écrire la moindre ligne de YAML, prenez 5 minutes pour comprendre l'architecture du pipeline que vous allez
+construire.
 
 ### Schéma du pipeline
 
@@ -79,8 +80,8 @@ Avant de passer à la suite, répondez mentalement à ces questions :
 2. Créez un fichier `ci-cd.yml` dans ce répertoire
 3. Définissez :
     - Le **nom** du workflow : `CI/CD Pipeline`
-    - Les **triggers** : le workflow doit se déclencher sur les `push` et `pull_request` vers les branches `main` et `develop`
-    - Une **variable d'environnement globale** `REGISTRY` avec la valeur `ghcr.io` (GitHub Container Registry)
+    - Les **triggers** : le workflow doit se déclencher sur les `push` et `pull_request` vers les branches `main` et
+      `develop`
 
 > **Aide — Syntaxe des triggers**
 >
@@ -109,8 +110,6 @@ on:
   pull_request:
     branches: [ main, develop ]
 
-env:
-  REGISTRY: ghcr.io
 ```
 
 ---
@@ -121,10 +120,10 @@ env:
 
 Le linting vérifie la **qualité du code** sans l'exécuter. Pour PHP, deux outils sont courants :
 
-| Outil | Rôle |
-|-------|------|
-| **PHP CS Fixer** | Vérifie le respect des conventions de style (PSR-12) |
-| **PHPStan** | Analyse statique — détecte les bugs potentiels sans exécuter le code |
+| Outil            | Rôle                                                                 |
+|------------------|----------------------------------------------------------------------|
+| **PHP CS Fixer** | Vérifie le respect des conventions de style (PSR-12)                 |
+| **PHPStan**      | Analyse statique — détecte les bugs potentiels sans exécuter le code |
 
 ### Consignes {id="consignes_2"}
 
@@ -140,11 +139,13 @@ Ajoutez un job `lint-backend` qui :
 
 > **Aide — Cache Composer**
 >
-> L'action `actions/cache@v4` utilise une `key` basée sur un hash de fichier pour savoir si le cache est valide. Pour Composer, le fichier de référence est `composer.lock`. Le chemin à mettre en cache est `api/vendor`.
+> L'action `actions/cache@v4` utilise une `key` basée sur un hash de fichier pour savoir si le cache est valide. Pour
+> Composer, le fichier de référence est `composer.lock`. Le chemin à mettre en cache est `api/vendor`.
 
 > **Aide — PHP CS Fixer**
 >
-> PHP CS Fixer n'est pas encore installé dans le projet. Vous devrez l'installer via Composer (`require-dev`), puis créer un fichier de configuration `.php-cs-fixer.dist.php` dans le dossier `api/`.
+> PHP CS Fixer n'est pas encore installé dans le projet. Vous devrez l'installer via Composer (`require-dev`), puis
+> créer un fichier de configuration `.php-cs-fixer.dist.php` dans le dossier `api/`.
 >
 > En mode vérification (dry-run), la commande est :
 > ```bash
@@ -153,7 +154,8 @@ Ajoutez un job `lint-backend` qui :
 
 > **Aide — PHPStan**
 >
-> De même, PHPStan doit être installé via Composer. Il nécessite un fichier `phpstan.neon` pour sa configuration. Un bon point de départ est le niveau d'analyse `5` sur le dossier `src`.
+> De même, PHPStan doit être installé via Composer. Il nécessite un fichier `phpstan.neon` pour sa configuration. Un bon
+> point de départ est le niveau d'analyse `5` sur le dossier `src`.
 
 ### Correction {collapsible="true" id="correction_2"}
 
@@ -247,7 +249,8 @@ jobs:
 
 ### Contexte {id="contexte_2"}
 
-Le projet React utilise déjà ESLint (déclaré dans `package.json`). Vous allez ajouter un job qui vérifie le code JavaScript.
+Le projet React utilise déjà ESLint (déclaré dans `package.json`). Vous allez ajouter un job qui vérifie le code
+JavaScript.
 
 ### Consignes {id="consignes_3"}
 
@@ -256,11 +259,12 @@ Ajoutez un job `lint-frontend` qui :
 1. S'exécute sur `ubuntu-latest`
 2. Récupère le code
 3. Configure Node.js 22 avec l'action `actions/setup-node@v4`
-4. Met en cache les dépendances npm (le chemin à cacher est `front/node_modules`, la clé se base sur `package-lock.json`)
+4. Met en cache les dépendances npm (le chemin à cacher est `~/.npm`, la clé se base sur `package-lock.json`)
 5. Installe les dépendances avec `npm ci` (plus rapide et reproductible que `npm install`)
 6. Exécute ESLint
 
-> **Attention :** Ce job ne doit **pas** dépendre du job `lint-backend`. Les deux lints s'exécutent en parallèle (pas de mot-clé `needs`).
+> **Attention :** Ce job ne doit **pas** dépendre du job `lint-backend`. Les deux lints s'exécutent en parallèle (pas de
+> mot-clé `needs`).
 
 > **Aide — `npm ci` vs `npm install`**
 >
@@ -268,6 +272,25 @@ Ajoutez un job `lint-frontend` qui :
 > - Supprime `node_modules` et installe depuis le `package-lock.json` exact
 > - Plus rapide en CI car pas de résolution de dépendances
 > - Échoue si `package-lock.json` n'est pas à jour
+
+**Pourquoi mettre en cache `~/.npm` ?**
+
+npm ci supprime systématiquement le dossier node_modules avant de réinstaller les dépendances. C'est par conception :
+il garantit une installation propre et reproductible à partir du package-lock.json. Donc mettre node_modules en
+cache est inutile, il sera effacé à chaque exécution.
+~/.npm est le cache interne de npm. C'est un magasin local de tarballs déjà téléchargées. 
+Quand on le met en cache dans la CI :
+
+- `npm ci` supprime node_modules (comme toujours)
+- Il lit le package-lock.json pour déterminer les dépendances exactes
+- Au lieu de retélécharger chaque paquet depuis le registre, il retrouve les tarballs dans ~/.npm
+- Il les décompresse et reconstruit node_modules à partir de zéro
+
+On économise ainsi le temps réseau (le plus coûteux en CI), tout en gardant la garantie d'intégrité de 
+`npm ci`.
+À l'inverse, avec `npm install` (sans le ci), mettre node_modules en cache aurait du sens, puisque npm install
+ne le supprime pas et peut le réutiliser tel quel. On perd alors la garantie d'une installation strictement
+conforme au lockfile.
 
 ### Correction {collapsible="true" id="correction_3"}
 
@@ -296,7 +319,7 @@ Ajoutez un job `lint-frontend` qui :
       - name: Cache npm
         uses: actions/cache@v4
         with:
-          path: front/node_modules
+          path: ~/.npm
           key: npm-${{ hashFiles('front/package-lock.json') }}
           restore-keys: npm-
 
@@ -314,7 +337,8 @@ Ajoutez un job `lint-frontend` qui :
 
 ### Contexte {id="contexte_3"}
 
-Les tests PHPUnit du projet nécessitent une base de données PostgreSQL et un serveur Redis. GitHub Actions permet de démarrer des **services** (conteneurs Docker) accessibles par les jobs.
+Les tests PHPUnit du projet nécessitent une base de données PostgreSQL et un serveur Redis. GitHub Actions permet de
+démarrer des **services** (conteneurs Docker) accessibles par les jobs.
 
 ### Consignes {id="consignes_4"}
 
@@ -322,9 +346,11 @@ Ajoutez un job `test-backend` qui :
 
 1. **Dépend** des deux jobs de lint (`lint-backend` et `lint-frontend`)
 2. Déclare deux **services** :
-    - `postgres` : image `postgres:16-alpine`, avec les variables `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` correspondant à la configuration du projet, et un **healthcheck** via `pg_isready`
+    - `postgres` : image `postgres:16-alpine`, avec les variables `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+      correspondant à la configuration du projet, et un **healthcheck** via `pg_isready`
     - `redis` : image `redis:7-alpine`
-3. Définit les **variables d'environnement** nécessaires au job (DATABASE_URL pointant vers le service `postgres`, REDIS_URL, APP_ENV=test, APP_SECRET)
+3. Définit les **variables d'environnement** nécessaires au job (DATABASE_URL pointant vers le service `postgres`,
+   REDIS_URL, APP_ENV=test, APP_SECRET)
 4. Installe PHP, les dépendances Composer
 5. Génère les clés JWT (commande Symfony : `php bin/console lexik:jwt:generate-keypair`)
 6. Crée le schéma de la base de données de test
@@ -333,7 +359,8 @@ Ajoutez un job `test-backend` qui :
 
 > **Aide — Services GitHub Actions**
 >
-> Les services sont des conteneurs accessibles via `localhost` depuis le runner. Les ports doivent être mappés explicitement :
+> Les services sont des conteneurs accessibles via `localhost` depuis le runner. Les ports doivent être mappés
+> explicitement :
 > ```yaml
 > services:
 >   mon-service:
@@ -349,11 +376,13 @@ Ajoutez un job `test-backend` qui :
 
 > **Aide — DATABASE_URL**
 >
-> En CI, le host de la base de données est `localhost` (pas `database` comme dans Docker Compose). Adaptez l'URL en conséquence.
+> En CI, le host de la base de données est `localhost` (pas `database` comme dans Docker Compose). Adaptez l'URL en
+> conséquence.
 
 > **Aide — Couverture de code**
 >
-> PHPUnit génère un rapport Clover avec l'option `--coverage-clover`. Xdebug doit être activé dans les extensions PHP (ajoutez `xdebug` dans le setup-php avec `coverage: xdebug`).
+> PHPUnit génère un rapport Clover avec l'option `--coverage-clover`. Xdebug doit être activé dans les extensions PHP (
+> ajoutez `xdebug` dans le setup-php avec `coverage: xdebug`).
 
 ### Correction {collapsible="true" id="correction_4"}
 
@@ -390,6 +419,11 @@ Ajoutez un job `test-backend` qui :
         image: redis:7-alpine
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     # --- Variables d'environnement pour Symfony ---
     env:
@@ -447,7 +481,8 @@ Ajoutez un job `test-backend` qui :
 
 ### Contexte {id="contexte_4"}
 
-Une fois les tests validés, il faut construire les images Docker et les envoyer sur un **registry** pour pouvoir les déployer. Vous utiliserez le **GitHub Container Registry** (ghcr.io), intégré à GitHub.
+Une fois les tests validés, il faut construire les images Docker et les envoyer sur un **registry** pour pouvoir les
+déployer. Vous utiliserez le **GitHub Container Registry** (ghcr.io), intégré à GitHub.
 
 ### Consignes {id="consignes_5"}
 
@@ -455,11 +490,13 @@ Ajoutez un job `build-images` qui :
 
 1. **Dépend** du job `test-backend`
 2. Ne s'exécute que sur un **push** (pas sur une PR) — utilisez la condition `if: github.event_name == 'push'`
-3. Se connecte au registry GHCR avec l'action `docker/login-action@v3` (le username est `${{ github.actor }}`, le password est `${{ secrets.GITHUB_TOKEN }}`)
+3. Se connecte au registry GHCR avec l'action `docker/login-action@v3` (le username est `${{ github.actor }}`, le
+   password est `${{ secrets.GITHUB_TOKEN }}`)
 4. Configure Docker Buildx avec `docker/setup-buildx-action@v3`
 5. Build et push l'image **backend** avec `docker/build-push-action@v5` :
     - Contexte : `./api`
-    - Tags : `ghcr.io/${{ github.repository }}/backend:latest` et `ghcr.io/${{ github.repository }}/backend:${{ github.sha }}`
+    - Tags : `ghcr.io/${{ github.repository }}/backend:latest` et
+      `ghcr.io/${{ github.repository }}/backend:${{ github.sha }}`
     - Activez le cache des layers Docker (`cache-from` et `cache-to` de type `gha`)
 6. Faites de même pour l'image **frontend** (contexte `./front`)
 
@@ -541,7 +578,8 @@ Ajoutez un job `build-images` qui :
 ### Contexte {id="contexte_5"}
 
 **Trivy** est un scanner de vulnérabilités open-source qui analyse les images Docker pour détecter :
-- Des vulnérabilités connues (CVE) dans les packages système
+
+- Des vulnérabilités connues (CVE pour Common Vulnerabilities and Exposures) dans les packages système
 - Des dépendances applicatives obsolètes ou vulnérables
 - Des mauvaises configurations
 
@@ -560,9 +598,11 @@ Ajoutez un job `security-scan` qui :
 
 > **Aide — Exit code**
 >
-> Le paramètre `exit-code: '1'` fait échouer le step (et donc le job) si des vulnérabilités du niveau de sévérité indiqué sont trouvées. Utilisez `exit-code: '0'` si vous voulez simplement signaler sans bloquer.
+> Le paramètre `exit-code: '1'` fait échouer le step (et donc le job) si des vulnérabilités du niveau de sévérité
+> indiqué sont trouvées. Utilisez `exit-code: '0'` si vous voulez simplement signaler sans bloquer.
 
-> **Réflexion :** En pratique, il est courant de ne bloquer que sur les vulnérabilités `CRITICAL` et de simplement alerter pour les `HIGH`. Comment feriez-vous cela avec deux steps distincts ?
+> **Réflexion :** En pratique, il est courant de ne bloquer que sur les vulnérabilités `CRITICAL` et de simplement
+> alerter pour les `HIGH`. Comment feriez-vous cela avec deux steps distincts ?
 
 ### Correction {collapsible="true" id="correction_6"}
 
@@ -580,31 +620,58 @@ Ajoutez un job `security-scan` qui :
         uses: actions/checkout@v4
 
       # --- Scanner l'image backend (bloque si vulnérabilité CRITICAL) ---
-      - name: Scan image backend
+      - name: Scan image backend (critical)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ghcr.io/${{ github.repository }}/backend:latest
           format: table
           severity: CRITICAL
           exit-code: '1'
+          
+      - name: Scan image backend (high)
+        uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/backend:latest
+          format: table
+          severity: HIGH
+          exit-code: '0'
 
       # --- Scanner l'image frontend ---
-      - name: Scan image frontend
-        uses: aquasecurity/trivy-action@master
+      - name: Scan image frontend (critical)
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ghcr.io/${{ github.repository }}/frontend:latest
           format: table
           severity: CRITICAL
           exit-code: '1'
+          
+      - name: Scan image frontend (high)
+        uses: aquasecurity/trivy-action@0.35.0
+        if: always()
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/frontend:latest
+          format: table
+          severity: HIGH
+          exit-code: '0'
 
       # --- Générer un rapport détaillé (ne bloque pas) ---
       - name: Rapport SARIF backend
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.35.0
         if: always()
         with:
           image-ref: ghcr.io/${{ github.repository }}/backend:latest
           format: sarif
           output: backend-trivy.sarif
+          severity: CRITICAL,HIGH
+
+      - name: Rapport SARIF frontend
+        uses: aquasecurity/trivy-action@0.35.0
+        if: always()
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/frontend:latest
+          format: sarif
+          output: frontend-trivy.sarif
           severity: CRITICAL,HIGH
 
       # --- Sauvegarder le rapport ---
@@ -622,11 +689,14 @@ Ajoutez un job `security-scan` qui :
 
 ### Contexte
 
-Le déploiement automatique sur staging permet de tester chaque changement dans un environnement proche de la production. Ce job ne doit se déclencher que pour la branche `develop`.
+Le déploiement automatique sur staging permet de tester chaque changement dans un environnement proche de la production.
+Ce job ne doit se déclencher que pour la branche `develop`.
 
-Pour simplifier ce lab, le déploiement consistera à vérifier que tout est prêt et à exécuter un **smoke test** (vérification basique que l'application répond).
+Pour simplifier ce lab, le déploiement consistera à vérifier que tout est prêt et à exécuter un **smoke test** (
+vérification basique que l'application répond).
 
-> Dans un projet réel, vous utiliseriez ici un outil comme **Heroku**, **Railway**, **Fly.io** ou un déploiement SSH/Kubernetes.
+> Dans un projet réel, vous utiliseriez ici un outil comme **Heroku**, **Railway**, **Fly.io** ou un déploiement
+> SSH/Kubernetes.
 
 ### Consignes {id="consignes_7"}
 
@@ -716,13 +786,13 @@ Ajoutez un job `deploy-staging` qui :
 
 ### Dépannage courant
 
-| Problème | Solution probable |
-|----------|-------------------|
-| `Error: Process completed with exit code 2` sur PHP CS Fixer | Le code ne respecte pas PSR-12. Exécutez `vendor/bin/php-cs-fixer fix` localement |
-| `Connection refused` sur PostgreSQL | Vérifiez que le healthcheck du service est bien configuré et que le port 5432 est mappé |
-| `Permission denied` sur les clés JWT | Ajoutez `--skip-if-exists` à la commande de génération |
-| Job `build-images` skipped | Normal sur une PR — il ne s'exécute que sur un push |
-| Erreur YAML `mapping values are not allowed here` | Problème d'indentation — utilisez des espaces, jamais des tabulations |
+| Problème                                                     | Solution probable                                                                       |
+|--------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| `Error: Process completed with exit code 2` sur PHP CS Fixer | Le code ne respecte pas PSR-12. Exécutez `vendor/bin/php-cs-fixer fix` localement       |
+| `Connection refused` sur PostgreSQL                          | Vérifiez que le healthcheck du service est bien configuré et que le port 5432 est mappé |
+| `Permission denied` sur les clés JWT                         | Ajoutez `--skip-if-exists` à la commande de génération                                  |
+| Job `build-images` skipped                                   | Normal sur une PR — il ne s'exécute que sur un push                                     |
+| Erreur YAML `mapping values are not allowed here`            | Problème d'indentation — utilisez des espaces, jamais des tabulations                   |
 
 ### Correction — Fichier complet {collapsible="true"}
 
@@ -733,7 +803,6 @@ Ajoutez un job `deploy-staging` qui :
 # Workflow complet : lint → tests → build → sécurité → déploiement
 #
 # Déclencheurs : push ou PR sur main et develop
-# Registry : GitHub Container Registry (ghcr.io)
 # =============================================================================
 
 name: CI/CD Pipeline
@@ -744,8 +813,6 @@ on:
   pull_request:
     branches: [ main, develop ]
 
-env:
-  REGISTRY: ghcr.io
 
 jobs:
   # ===========================================================================
@@ -807,7 +874,7 @@ jobs:
       - name: Cache npm
         uses: actions/cache@v4
         with:
-          path: front/node_modules
+          path: ~/.npm
           key: npm-${{ hashFiles('front/package-lock.json') }}
           restore-keys: npm-
 
@@ -847,6 +914,11 @@ jobs:
         image: redis:7-alpine
         ports:
           - 6379:6379
+        options: >-
+            --health-cmd "redis-cli ping"
+            --health-interval 10s
+            --health-timeout 5s
+            --health-retries 5
 
     env:
       DATABASE_URL: "postgresql://yapuka:yapuka@localhost:5432/yapuka_test?serverVersion=16&charset=utf8"
@@ -938,7 +1010,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ===========================================================================
-  # Sécurité - Scan des images avec Trivy
+  # Job : Scan de sécurité des images Docker
   # ===========================================================================
   security-scan:
     name: Security Scan (Trivy)
@@ -949,7 +1021,8 @@ jobs:
       - name: Checkout du code
         uses: actions/checkout@v4
 
-      - name: Scan image backend
+      # --- Scanner l'image backend (bloque si vulnérabilité CRITICAL) ---
+      - name: Scan image backend (critical)
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ghcr.io/${{ github.repository }}/backend:latest
@@ -957,16 +1030,36 @@ jobs:
           severity: CRITICAL
           exit-code: '1'
 
-      - name: Scan image frontend
+      - name: Scan image backend (high)
         uses: aquasecurity/trivy-action@master
+        if: always()
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/backend:latest
+          format: table
+          severity: HIGH
+          exit-code: '0'
+
+      # --- Scanner l'image frontend ---
+      - name: Scan image frontend (critical)
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ghcr.io/${{ github.repository }}/frontend:latest
           format: table
           severity: CRITICAL
           exit-code: '1'
 
+      - name: Scan image frontend (high)
+        uses: aquasecurity/trivy-action@0.35.0
+        if: always(
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/frontend:latest
+          format: table
+          severity: HIGH
+          exit-code: '0'
+
+      # --- Générer un rapport détaillé (ne bloque pas) ---
       - name: Rapport SARIF backend
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.35.0
         if: always()
         with:
           image-ref: ghcr.io/${{ github.repository }}/backend:latest
@@ -974,6 +1067,16 @@ jobs:
           output: backend-trivy.sarif
           severity: CRITICAL,HIGH
 
+      - name: Rapport SARIF frontend
+        uses: aquasecurity/trivy-action@0.35.0
+        if: always()
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/frontend:latest
+          format: sarif
+          output: frontend-trivy.sarif
+          severity: CRITICAL,HIGH
+
+      # --- Sauvegarder le rapport ---
       - name: Upload rapport de sécurité
         uses: actions/upload-artifact@v4
         if: always()
@@ -1023,7 +1126,8 @@ jobs:
 
 Si vous avez terminé en avance, voici des améliorations à explorer :
 
-1. **Deploy production avec approval :** Ajoutez un job `deploy-production` conditionné à `main` avec un environment protégé par une approval manuelle dans les settings GitHub.
+1. **Deploy production avec approval :** Ajoutez un job `deploy-production` conditionné à `main` avec un environment
+   protégé par une approval manuelle dans les settings GitHub.
 
 2. **Matrix strategy :** Testez le backend sur plusieurs versions de PHP (8.3 et 8.4) en utilisant une matrice :
    ```yaml

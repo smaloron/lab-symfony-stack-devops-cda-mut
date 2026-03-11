@@ -563,17 +563,17 @@ Voici le fil conducteur de tout ce que vous allez faire, du début à la fin :
 
 ```mermaid
 graph TD
-    A["1. Créer 3 VMs avec Multipass"]
-    B["2. Installer Docker sur chaque VM"]
-    C["3. Initialiser le cluster Swarm<br />(manager + 2 workers)"]
-    D["4. Déployer un registry privé<br />(port 5000 sur le manager)"]
-    E["5. Builder et pousser les images<br />(yapuka-php, yapuka-front)"]
-    F["6. Écrire le stack.yml<br />(adapter le docker-compose.yml)"]
-    G["7. Déployer la stack Yapuka<br />(docker stack deploy)"]
-    H["8. Scaler les services<br />(docker service scale)"]
-    I["9. Rolling update<br />(déployer la v2 sans interruption)"]
-    J["10. Tester la haute disponibilité<br />(arrêter worker-1, observer)"]
-    K["11. Consulter logs et métriques"]
+    A["Créer 3 VMs avec Multipass"]
+    B["Installer Docker sur chaque VM"]
+    C["Initialiser le cluster Swarm<br />(manager + 2 workers)"]
+    D["Déployer un registry privé<br />(port 5000 sur le manager)"]
+    E["Builder et pousser les images<br />(yapuka-php, yapuka-front)"]
+    F["Écrire le stack.yml<br />(adapter le docker-compose.yml)"]
+    G["Déployer la stack Yapuka<br />(docker stack deploy)"]
+    H["Scaler les services<br />(docker service scale)"]
+    I["Rolling update<br />(déployer la v2 sans interruption)"]
+    J[" Tester la haute disponibilité<br />(arrêter worker-1, observer)"]
+    K[" Consulter logs et métriques"]
     A --> B --> C --> D --> E --> F --> G --> H --> I --> J --> K
 ```
 
