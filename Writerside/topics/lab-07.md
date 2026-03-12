@@ -562,16 +562,16 @@ Tout est prêt. Déployons l'application sur le cluster.
 
 ### Étape 1 : Créer la config Nginx
 
-Depuis le manager, créez la config Docker pour Nginx :
 
 ```bash
-docker config create nginx_conf ./docker/nginx/default.conf
+multipass transfer ./docker/nginx/default.conf manager:/home/ubuntu/default.conf
+multipass exec manager -- docker config create nginx_conf /home/ubuntu/default.conf
 ```
 
 Vérifiez :
 
 ```bash
-docker config ls
+multipass exec manager -- docker config ls
 ```
 
 ### Étape 2 : Déployer la stack
@@ -598,10 +598,15 @@ Après le déploiement, exécutez les commandes suivantes **depuis le manager** 
 
 ```bash
 # Créer la config Nginx
-docker config create nginx_conf ./docker/nginx/default.conf
+multipass transfer ./docker/nginx/default.conf manager:/home/ubuntu/default.conf
+multipass exec manager -- docker config create nginx_conf /home/ubuntu/default.conf
 
 # Déployer la stack
-docker stack deploy -c stack.yml yapuka
+multipass transfer ./stack.yml manager:/home/ubuntu/stack.yml
+multipass exec manager -- docker stack deploy -c /home/ubuntu/stack.yml yapuka
+
+# Lancement du shell sur le manager
+multipass shell manager
 
 # Vérifications (depuis le manager)
 docker stack ls
@@ -659,6 +664,8 @@ service à la volée.
 ### Correction {collapsible="true" id="correction_8"}
 
 ```bash
+multipass shell manager
+
 # Scaler PHP à 4 replicas
 docker service scale yapuka_php=4
 
